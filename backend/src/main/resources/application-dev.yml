@@ -1,0 +1,38 @@
+server:
+  port : 8080
+
+spring:
+  application:
+    name: Zovo
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${POSTGRES_URL}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    locations: classpath:db/migrations
+    baseline-on-migrate: true
+    enabled: true
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: YOUR_GOOGLE_CLIENT_ID
+            client-secret: YOUR_GOOGLE_CLIENT_SECRET
+            scope:
+              - email
+              - profile
+
+logging:
+  level: # TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF
+    root: INFO
+    org.springframework.security: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
