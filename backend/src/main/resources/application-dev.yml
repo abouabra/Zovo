@@ -12,9 +12,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl # For keeping naming structure like createdAt and not turn it into a snake_case
   flyway:
     locations: classpath:db/migrations
-    baseline-on-migrate: true
+#    baseline-on-migrate: true
     enabled: true
   output:
     ansi:

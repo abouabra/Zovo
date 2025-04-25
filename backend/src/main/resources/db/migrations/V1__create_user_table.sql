@@ -1,6 +1,7 @@
 CREATE TABLE users (
     id serial primary key,
-    name varchar(255),
-    email varchar(255),
-    password varchar(255)
+    username varchar(255) not null unique,
+    email varchar(255) not null unique,
+    password varchar(255) not null,
+    "createdAt" timestamptz default now()
 );
