@@ -9,6 +9,47 @@ import lombok.Data;
 import me.abouabra.zovo.validators.PasswordMatches;
 import me.abouabra.zovo.validators.ValidPassword;
 
+/**
+ * Data Transfer Object (DTO) for handling user registration information.
+ * This class is used to encapsulate the necessary data for registering a new user,
+ * including username, email, password, and password confirmation. Validation
+ * constraints are applied to ensure data integrity and adherence to specified rules.
+ * <p>
+ * The class includes the following validations:
+ * <ul>
+ * <li>The {@code username} field:
+ *     <ul>
+ *     <li>Must not be blank</li>
+ *     <li>Must be between 3 and 30 characters long</li>
+ *     <li>Can only contain alphanumeric characters and underscores</li>
+ *     </ul>
+ * </li>
+ * <li>The {@code email} field:
+ *     <ul>
+ *     <li>Must not be blank</li>
+ *     <li>Must follow a valid email format</li>
+ *     </ul>
+ * </li>
+ * <li>The {@code password} field:
+ *     <ul>
+ *     <li>Must not be blank</li>
+ *     <li>Must comply with the custom {@code ValidPassword} annotation to
+ *         ensure predefined security requirements such as containing uppercase
+ *         letters, lowercase letters, and numbers</li>
+ *     </ul>
+ * </li>
+ * <li>The {@code passwordConfirmation} field:
+ *     <ul>
+ *     <li>Must not be blank</li>
+ *     <li>Must comply with the custom {@code ValidPassword} annotation</li>
+ *     </ul>
+ * </li>
+ * </ul>
+ * <p>
+ * In addition, the class is validated at the class-level through the
+ * {@code PasswordMatches} annotation to ensure the password and
+ * password confirmation fields match.
+ */
 @AllArgsConstructor
 @Data
 @PasswordMatches(message = "Passwords do not match")

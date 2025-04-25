@@ -6,6 +6,22 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Represents the structure of an error response returned by the application
+ * in case of exceptions or errors. This class encapsulates details
+ * about the error to provide clear feedback and facilitate debugging.
+ * <p>
+ * The structure includes:
+ * <ul>
+ *     <li>A unique error code that identifies the type of error.</li>
+ *     <li>A message explaining the error.</li>
+ *     <li>Additional details that may provide further context about the error.</li>
+ *     <li>A timestamp indicating when the error occurred.</li>
+ * </ul>
+ * <p>
+ * This class provides multiple constructors for flexibility in creating
+ * error responses with varying levels of detail.
+ */
 @Data
 @AllArgsConstructor
 public class ErrorResponse {

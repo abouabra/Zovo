@@ -1,40 +1,63 @@
-server:
-  port : 8080
+#  Configuration For Development Profile
 
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        max-age: 7d
+
+# Application Configuration
 spring:
   application:
     name: Zovo
+
+  # Database Configuration
   datasource:
     driver-class-name: org.postgresql.Driver
     url: ${POSTGRES_URL}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+
+  # JPA Configuration
   jpa:
     hibernate:
       ddl-auto: none
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl # For keeping naming structure like createdAt and not turn it into a snake_case
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
+  # Database Migration Configuration
   flyway:
     locations: classpath:db/migrations
-#    baseline-on-migrate: true
     enabled: true
+
+  # Output Configuration
   output:
     ansi:
       enabled: ALWAYS
 
+  # OAuth2 Configuration
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id: YOUR_GOOGLE_CLIENT_ID
-            client-secret: YOUR_GOOGLE_CLIENT_SECRET
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
 
+# Logging Configuration
 logging:
-  level: # TRACE < DEBUG < INFO < WARN < ERROR < FATAL < OFF
+  level:
     root: INFO
     org.springframework.security: TRACE
     org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
+# Security Configuration
+security:
+  bcrypt:
+    strength: 12
