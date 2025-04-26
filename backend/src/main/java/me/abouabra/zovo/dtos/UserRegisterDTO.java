@@ -52,7 +52,7 @@ import me.abouabra.zovo.validators.ValidPassword;
  */
 @AllArgsConstructor
 @Data
-@PasswordMatches(message = "Passwords do not match")
+@PasswordMatches
 public class UserRegisterDTO {
 
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can only contain letters, numbers, and underscores")

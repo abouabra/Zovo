@@ -4,8 +4,6 @@ import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.UserResponseDTO;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,8 +15,6 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 public class UserController {
-
-    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private UserService userService;
 
     @GetMapping("/users")

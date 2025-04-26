@@ -57,7 +57,7 @@ import org.springframework.security.core.AuthenticationException;
  *     <li>{@code UserRepository}: Handles database operations for {@code User} entities.</li>
  *     <li>{@code RoleRepository}: Manages role data retrieval and storage.</li>
  *     <li>{@code UserMapper}: Maps between user entity objects and DTOs.</li>
- *     <li>{@code PasswordEncoder}: Encrypts user passwords in a secure manner.</li>
+ *     <li>{@code PasswordEncoder}: Encrypts user passwords securely.</li>
  *     <li>{@code AuthenticationManager}: Provides functionality to authenticate users.</li>
  * </ul>
  *

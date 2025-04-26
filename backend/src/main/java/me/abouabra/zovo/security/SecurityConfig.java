@@ -80,7 +80,7 @@ public class SecurityConfig {
     private final int bcryptStrength;
 
     public SecurityConfig(UserPrincipalService userPrincipalService,
-                          @Value("${security.bcrypt-strength}") int bcryptStrength) {
+                          @Value("${security.bcrypt.strength}") int bcryptStrength) {
         this.userPrincipalService = userPrincipalService;
         this.bcryptStrength = bcryptStrength;
     }
