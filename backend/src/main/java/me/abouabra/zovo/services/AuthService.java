@@ -1,7 +1,9 @@
 package me.abouabra.zovo.services;
 
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -22,59 +24,94 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.AuthenticationException;
+
 
 /**
- * The {@code AuthService} class provides authentication and registration services
- * for managing users and their roles within an application.
- *
- * <p>This service acts as a central point for handling authentication-related
- * functionalities such as logging in users and registering new accounts. It
- * interacts with repositories to manage user and role data and uses mappings
- * to bridge between DTOs and entity objects. Additionally, password encryption
- * and session management are also implemented as part of this service.</p>
- *
- * <p><strong>Key Features:</strong></p>
+ * The {@code AuthService} class provides methods for managing user authentication, registration,
+ * and session-related operations in the application.
+ * <p>
+ * This class handles core authentication workflows, including user login, registration, and logout.
+ * It integrates with the Spring Security framework to ensure secure and reliable session handling.
+ * Transactions are utilized where appropriate to maintain consistency across operations.
+ * <p>
+ * Key responsibilities:
  * <ul>
- *     <li>User Authentication: Authenticates existing users based on their credentials.</li>
- *     <li>User Registration: Registers new users and automatically assigns them the default user role.</li>
- *     <li>Session Management: Manages user sessions and their associated security contexts.</li>
- *     <li>Password Encoding: Securely encrypts user credentials before saving them to the database.</li>
+ *   <li>User authentication and session management.</li>
+ *   <li>Registration of new users with validation and encryption.</li>
+ *   <li>User logout and security context clearing.</li>
  * </ul>
- *
- * <p>The class is marked with {@code @Service} to indicate that it is a Spring
- * service component and should be discovered during component scanning. It uses
- * constructor injection via {@code @AllArgsConstructor} to provide dependencies.</p>
- *
- * <p><strong>Dependencies:</strong></p>
+ * <p>
+ * The class uses several dependencies:
  * <ul>
- *     <li>{@code UserRepository}: Handles database operations for {@code User} entities.</li>
- *     <li>{@code RoleRepository}: Manages role data retrieval and storage.</li>
- *     <li>{@code UserMapper}: Maps between user entity objects and DTOs.</li>
- *     <li>{@code PasswordEncoder}: Encrypts user passwords securely.</li>
- *     <li>{@code AuthenticationManager}: Provides functionality to authenticate users.</li>
+ *   <li>{@code UserRepository} - To interact with the user persistence layer.</li>
+ *   <li>{@code RoleRepository} - To access and configure roles for users.</li>
+ *   <li>{@code UserMapper} - For mapping data transfer objects (DTOs) to entity objects and vice versa.</li>
+ *   <li>{@code PasswordEncoder} - To securely encode and validate user passwords.</li>
+ *   <li>{@code AuthenticationManager} - To manage the authentication process within Spring Security.</li>
  * </ul>
- *
- * <p><strong>Thread-Safety:</strong> This class is thread-safe as it maintains
- * no mutable state outside of local method variables and relies on Spring's
- * transactional and dependency management features.</p>
+ * This class is annotated with {@code @Service} to indicate that it is a Spring service component
+ * and {@code @AllArgsConstructor} for automated constructor injection.
  */
 @Service
 @AllArgsConstructor
 @Getter
 public class AuthService {
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+    private final AuthenticationManager authManager;
     private UserRepository userRepo;
     private RoleRepository roleRepo;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authManager;
+
+    /**
+     * Registers a new user in the system by validating and processing the provided registration details.
+     * <p>
+     * The method performs the following operations:
+     * <ul>
+     *   <li>Validates that the username and email are unique; if not, throws {@code UserAlreadyExistsException}.</li>
+     *   <li>Maps the {@code UserRegisterDTO} to a {@code User} entity.</li>
+     *   <li>Assigns the default {@code ROLE_USER} to the new user.</li>
+     *   <li>Encrypts the user's password before persisting it.</li>
+     *   <li>Saves the user to the repository and returns their data encapsulated in a {@code UserResponseDTO}.</li>
+     * </ul>
+     * <p>
+     * This method is transactional, ensuring that all operations succeed or none are applied.
+     *
+     * @param requestDTO A {@code UserRegisterDTO} object containing the registration details,
+     *                   including username, email, password, and password confirmation. Must be valid.
+     * @return A {@code UserResponseDTO} object representing the newly registered user,
+     * which includes their username, email, and id.
+     * @throws UserAlreadyExistsException If a user with the same username or email already exists.
+     * @throws RoleNotFoundException      If the default user role {@code ROLE_USER} is not found.
+     */
+    @Transactional
+    public UserResponseDTO register(@Valid UserRegisterDTO requestDTO) {
+        if (userRepo.findUserByUsername(requestDTO.getUsername()).isPresent()) {
+            throw new UserAlreadyExistsException("Username '%s' is already taken".formatted(requestDTO.getUsername()));
+        }
+        if (userRepo.findUserByEmail(requestDTO.getEmail()).isPresent()) {
+            throw new UserAlreadyExistsException("Email '%s' is already taken".formatted(requestDTO.getEmail()));
+        }
+
+        User user = userMapper.toUser(requestDTO);
+
+        Role userRole = roleRepo.findByName("ROLE_USER").orElseThrow(() -> new RoleNotFoundException("Role with the specified name was not found"));
+
+        user.addRole(userRole);
+
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        userRepo.save(user);
+        return userMapper.toDTO(user);
+    }
+
 
     /**
      * Authenticates a user based on their login credentials and establishes an authenticated session.
@@ -99,9 +136,7 @@ public class AuthService {
     public UserResponseDTO login(UserLoginDTO loginDTO, HttpServletRequest request) {
         User user = userMapper.toUser(loginDTO);
 
-        Authentication authentication = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
-        );
+        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
@@ -112,51 +147,41 @@ public class AuthService {
 
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User authenticatedUser = userPrincipal.getUser();
-    
+
         return userMapper.toDTO(authenticatedUser);
     }
-    
-    
+
     /**
-     * Registers a new user in the system by validating and processing the provided registration details.
+     * Logs out the currently authenticated user by invalidating their session,
+     * clearing the security context, and removing any session-related cookies.
      * <p>
-     * The method performs the following operations:
+     * This method performs the following actions:
      * <ul>
-     *   <li>Validates that the username and email are unique; if not, throws {@code UserAlreadyExistsException}.</li>
-     *   <li>Maps the {@code UserRegisterDTO} to a {@code User} entity.</li>
-     *   <li>Assigns the default {@code ROLE_USER} to the new user.</li>
-     *   <li>Encrypts the user's password before persisting it.</li>
-     *   <li>Saves the user to the repository and returns their data encapsulated in a {@code UserResponseDTO}.</li>
+     *   <li>Invalidates the user's HTTP session if it exists.</li>
+     *   <li>Clears the {@code SecurityContextHolder} to remove any authentication details.</li>
+     *   <li>Removes the {@code JSESSIONID} cookie from the user's browser by setting its max age to zero.</li>
+     *   <li>Logs the logout operation for auditing or debugging purposes.</li>
      * </ul>
      * <p>
-     * This method is transactional, ensuring that all operations succeed or none are applied.
+     * This ensures secure and complete termination of the user's authenticated session.
      *
-     * @param requestDTO A {@code UserRegisterDTO} object containing the registration details,
-     *                   including username, email, password, and password confirmation. Must be valid.
-     * @return A {@code UserResponseDTO} object representing the newly registered user,
-     *         which includes their username, email, and id.
-     * @throws UserAlreadyExistsException If a user with the same username or email already exists.
-     * @throws RoleNotFoundException      If the default user role {@code ROLE_USER} is not found.
+     * @param request  The {@code HttpServletRequest} object, used to access the user's current HTTP session.
+     * @param response The {@code HttpServletResponse} object, used to send the cookie removal response to the client.
      */
-    @Transactional
-    public UserResponseDTO register(@Valid UserRegisterDTO requestDTO) {
-        if (userRepo.findUserByUsername(requestDTO.getUsername()).isPresent()) {
-            throw new UserAlreadyExistsException("Username '%s' is already taken".formatted(requestDTO.getUsername()));
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
         }
-        if (userRepo.findUserByEmail(requestDTO.getEmail()).isPresent()) {
-            throw new UserAlreadyExistsException("Email '%s' is already taken".formatted(requestDTO.getEmail()));
-        }
+        SecurityContextHolder.clearContext();
 
-        User user = userMapper.toUser(requestDTO);
 
-        Role userRole = roleRepo.findByName("ROLE_USER")
-                .orElseThrow(() -> new RoleNotFoundException("Role with the specified name was not found"));
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
 
-        user.addRole(userRole);
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        userRepo.save(user);
-        return userMapper.toDTO(user);
+        log.info("User has been logged out");
     }
 }
