@@ -66,8 +66,8 @@ public class AuthController {
      * @return a {@code ResponseEntity} containing a {@code UserResponseDTO} with the authenticated user's details such as ID, username, and email.
      */
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request) {
-        UserResponseDTO responseDTO = authService.login(loginDTO, request);
+    public ResponseEntity<UserResponseDTO> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
+        UserResponseDTO responseDTO = authService.login(loginDTO, request, response);
         return ResponseEntity.ok(responseDTO);
     }
 

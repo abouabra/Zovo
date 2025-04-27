@@ -1,5 +1,17 @@
 #  Configuration For Development Profile
 
+# Security Configuration
+security:
+  bcrypt:
+    strength: 12
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.security: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
 # Server Configuration
 server:
   port: 8080
@@ -7,7 +19,14 @@ server:
     session:
       timeout: 7d
       cookie:
-        max-age: 7d
+        name: BLABLAID
+        domain: localhost
+        path: /
+        max-age: 604800 # 7 days
+        secure: false
+        http-only: true
+        same-site: strict
+
 
 # Application Configuration
 spring:
@@ -23,6 +42,7 @@ spring:
 
   # JPA Configuration
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
       naming:
@@ -49,15 +69,3 @@ spring:
             scope:
               - email
               - profile
-
-# Logging Configuration
-logging:
-  level:
-    root: INFO
-    org.springframework.security: TRACE
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
-
-# Security Configuration
-security:
-  bcrypt:
-    strength: 12

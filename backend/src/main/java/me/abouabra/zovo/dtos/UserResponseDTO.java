@@ -3,14 +3,23 @@ package me.abouabra.zovo.dtos;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.Set;
+
+
+
 /**
- * Data Transfer Object (DTO) representing the response for user-related operations.
- * This class is used to encapsulate and transfer user-related data such as user ID, username,
- * and email between different layers of the application, particularly as a return type in APIs.
+ * Data Transfer Object (DTO) representing a user's response data.
  * <p>
- * Typical use cases for this class include:
- * - Representing user information in API responses.
- * - Ensuring that only necessary and safe user information is exposed externally.
+ * This class encapsulates the user information to be sent as part
+ * of API responses. It includes:
+ * <ul>
+ * <li>{@code id}: The unique identifier of the user.</li>
+ * <li>{@code username}: The username of the user.</li>
+ * <li>{@code email}: The email address of the user.</li>
+ * <li>{@code roles}: A set of roles associated with the user.</li>
+ * </ul>
+ * <p>
+ * Utilizes Lombok annotations for boilerplate code reduction.
  */
 @AllArgsConstructor
 @Data
@@ -18,4 +27,5 @@ public class UserResponseDTO {
     private Long id;
     private String username;
     private String email;
+    private Set<RoleDTO> roles;
 }
