@@ -2,7 +2,6 @@ package me.abouabra.zovo.validators;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import me.abouabra.zovo.dtos.UserRegisterDTO;
 
 import java.lang.reflect.Method;
 

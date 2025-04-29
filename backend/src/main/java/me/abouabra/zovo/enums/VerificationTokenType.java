@@ -35,7 +35,7 @@ public enum VerificationTokenType {
      */
     public EmailTemplateData getEmailTemplateData(String UUIDToken, String baseURL) {
         Map<String, Object> variables = new HashMap<>();
-        String subject = "";
+        String subject;
         String endpointURL;
 
         switch (this) {
