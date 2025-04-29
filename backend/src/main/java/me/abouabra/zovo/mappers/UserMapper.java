@@ -9,39 +9,45 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 
-
 /**
- * <p>
- * UserMapper is an interface for mapping between different user-related
- * entities and DTOs. It leverages MapStruct to generate implementation
- * at compile time and uses the Spring component model.
- * </p>
+ * <p>The <code>UserMapper</code> interface defines mapping functionality between
+ * <code>User</code> entities and their corresponding DTO classes.</p>
  *
- * <p>
- * Primary functionalities include:
- * </p>
  * <ul>
- *   <li>Mapping User DTOs (e.g., UserRegisterDTO, UserLoginDTO) to User entity.</li>
- *   <li>Mapping User entity to UserResponseDTO.</li>
+ *     <li>Converts DTOs to <code>User</code> entities.</li>
+ *     <li>Converts <code>User</code> entities to response DTOs.</li>
+ *     <li>Utilizes MapStruct for automatic implementation generation.</li>
+ *     <li>Depends on <code>RoleMapper</code> for role conversions.</li>
  * </ul>
+ *
+ * <p>Designed for use in Spring-based applications.</p>
  */
 @Mapper(componentModel = "spring", uses = {RoleMapper.class})
 public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "enabled", ignore = true)
     User toUser(UserRegisterDTO userRegisterDTO);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "enabled", ignore = true)
+    @Mapping(target = "username", ignore = true)
+    @Mapping(target = "email", ignore = true)
     User toUser(PasswordResetDTO passwordResetDTO);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "username", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "enabled", ignore = true)
     User toUser(UserLoginDTO userLoginDTO);
 
     UserResponseDTO toDTO(User user);
+
 }

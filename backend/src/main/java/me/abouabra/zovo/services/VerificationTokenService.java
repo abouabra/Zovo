@@ -8,17 +8,17 @@ import me.abouabra.zovo.models.VerificationToken;
 import me.abouabra.zovo.repositories.VerificationTokenRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+
 /**
  * <p>Service class for managing verification tokens.</p>
  *
- * <p>Responsible for creating, validating, and deleting tokens used for
- * user verification processes. Ensures token uniqueness, expiration handling,
- * and token association to users.</p>
+ * <p>Handles operations for generating, validating, and deleting verification tokens
+ * in association with {@link User} entities. Implements expiration logic and manages
+ * token persistence through the repository.</p>
  */
 @Slf4j
 @Service
@@ -29,77 +29,64 @@ public class VerificationTokenService {
 
 
     /**
-     * Generates a new verification token for the specified user and token type.
+     * Generates a verification token for the specified user and token type.
      * <p>
-     * Deletes any existing tokens associated with the user before creating a new one.
+     * If a token of the given type already exists for the user, it updates the token
+     * and the expiration date. Otherwise, it creates a new token.
+     * </p>
      *
-     * @param user the user for whom the verification token is generated.
-     * @param tokenType the type of the verification token to be created.
-     * @return the newly generated token as a string.
+     * @param user the user for whom the verification token is generated
+     * @param tokenType the type of the verification token
+     * @return the generated unique verification token as a {@code String}
      */
-    @Transactional
     public String generateVerificationToken(User user, VerificationTokenType tokenType) {
         String uuidToken = UUID.randomUUID().toString();
         ZonedDateTime expiryDate = ZonedDateTime.now().plusMinutes(EXPIRATION_TIME_IN_MINUTES);
 
-        tokenRepository.deleteAll(tokenRepository.findByUser(user));
+        Optional<VerificationToken> existingToken = tokenRepository.findByUserAndType(user, tokenType);
 
-        VerificationToken verificationToken = new VerificationToken(
-                null,
-                uuidToken,
-                user,
-                tokenType,
-                expiryDate
-        );
-        tokenRepository.save(verificationToken);
+        if (existingToken.isPresent()) {
+            VerificationToken token = existingToken.get();
+            token.setToken(uuidToken);
+            token.setExpiredAt(expiryDate);
+            tokenRepository.save(token);
+        } else {
+            VerificationToken verificationToken = new VerificationToken(
+                    null,
+                    uuidToken,
+                    user,
+                    tokenType,
+                    expiryDate
+            );
+            tokenRepository.save(verificationToken);
+        }
+
         log.debug("Generated {} token for user {}, expires at {}", tokenType, user.getEmail(), expiryDate);
-
         return uuidToken;
     }
 
 
     /**
-     * Validates a verification token based on its UUID and type.
-     * <p>
-     * Ensures that the token exists, has not expired, and matches the expected type.
+     * Validates a given verification token based on its type and expiration.
      *
-     * @param uuidToken the unique identifier of the token to validate.
-     * @param tokenType the expected type of the verification token.
-     * @return an {@code Optional} containing the valid {@code VerificationToken}, or empty if invalid.
+     * @param uuidToken the unique identifier of the verification token.
+     * @param tokenType the type of the token to validate.
+     * @return an {@link Optional} containing the valid {@link VerificationToken}, or empty if invalid or expired.
      */
-    @Transactional(readOnly = true)
     public Optional<VerificationToken> validateToken(String uuidToken, VerificationTokenType tokenType) {
-        Optional<VerificationToken> tokenOpt = tokenRepository.findByToken(uuidToken);
-
-        if (tokenOpt.isEmpty()) {
-            log.error("### - Token not found: {}", uuidToken);
-            return Optional.empty();
-        }
-
-        VerificationToken token = tokenOpt.get();
-
-        if (ZonedDateTime.now().isAfter(token.getExpiredAt())) {
-            log.error("### - Token expired: {}", uuidToken);
-            return Optional.empty();
-        }
-
-        if (token.getType() != tokenType) {
-            log.error("### - Token type mismatch. Expected: {}, Found: {}", tokenType, token.getType());
-            return Optional.empty();
-        }
-
-        return tokenOpt;
+        return tokenRepository.findValidToken(uuidToken, tokenType, ZonedDateTime.now());
     }
 
 
     /**
      * Deletes all verification tokens associated with the specified user.
      *
-     * @param user the user whose tokens are to be deleted.
+     * <p>This method removes all tokens linked to the provided user from the repository.</p>
+     *
+     * @param user the {@link User} whose tokens are to be deleted, must not be null.
      */
     @Transactional
     public void deleteTokenByUser(User user) {
-        tokenRepository.deleteAll(tokenRepository.findByUser(user));
-        log.debug("Deleted all tokens for user: {}", user.getEmail());
+        tokenRepository.deleteByUser(user);
     }
 }

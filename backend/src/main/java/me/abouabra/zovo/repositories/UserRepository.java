@@ -2,39 +2,60 @@ package me.abouabra.zovo.repositories;
 
 import me.abouabra.zovo.models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
+
 /**
- * <p>The <code>UserRepository</code> interface manages data persistence and retrieval operations for {@link User} entities.</p>
+ * <p>The <code>UserRepository</code> interface provides methods for performing CRUD operations
+ * and custom queries on <code>User</code> entities.</p>
  *
- * <p>It extends the {@link JpaRepository} interface to provide standard data access methods such as save, delete, and findById.
- * By default, these methods interact with the "users" table mapped by the {@link User} entity.</p>
+ * <p>Extends <code>JpaRepository</code> to include database interaction features with pagination
+ * and sorting support.</p>
  *
- * <p>This interface is annotated with <code>@Repository</code>, marking it as a Spring-managed bean. This allows seamless
- * integration with Spring's dependency injection and exception translation mechanisms.</p>
- *
- * <p>Custom query methods:</p>
  * <ul>
- *   <li><code>Optional&lt;User&gt; findUserByUsername(String username)</code>: Retrieves a {@link User} entity by its unique username property.
- *       <ul>
- *           <li>Returns an {@link Optional} containing the {@link User}, or an empty {@link Optional} if no match is found.</li>
- *           <li>This method is useful for scenarios such as user-specific operations, authentication, or user search functionality.</li>
- *       </ul>
- *   </li>
- *   <li><code>Optional&lt;User&gt; findUserByEmail(String email)</code>: Retrieves a {@link User} entity by its unique email property.
- *       <ul>
- *           <li>Returns an {@link Optional} containing the {@link User}, or an empty {@link Optional} if no match is found.</li>
- *           <li>It is commonly employed for tasks like user verification and email-based account management.</li>
- *       </ul>
- *   </li>
+ *   <li>Allows retrieval of users by username or email.</li>
+ *   <li>Checks user existence based on specific criteria.</li>
+ *   <li>Supports custom queries for active and enabled users.</li>
  * </ul>
  */
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
+    /**
+     * Finds a user by their unique username.
+     *
+     * @param username the username of the user to find. Must not be null.
+     * @return an {@link Optional} containing the {@link User} if found, or an empty {@link Optional} if no user exists with the given username.
+     */
     Optional<User> findUserByUsername(String username);
 
+    /**
+     * Retrieves a user by their email address.
+     *
+     * @param email the email address of the user to find.
+     * @return an {@link Optional} containing the user if found, or an empty {@link Optional} if not.
+     */
     Optional<User> findUserByEmail(String email);
+
+    /**
+     * Checks if a user exists by matching the provided username or email.
+     *
+     * @param username the username to search for.
+     * @param email the email to search for.
+     * @return <code>true</code> if a user exists with the given username or email; otherwise <code>false</code>.
+     */
+    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.username = :username OR u.email = :email")
+    boolean existsByUsernameOrEmail(String username, String email);
+
+    /**
+     * Retrieves an active and enabled user by their email address.
+     *
+     * @param email the email address of the user to find, must not be null.
+     * @return an {@link Optional} containing the active and enabled {@link User} if found, or an empty {@link Optional} if no such user exists.
+     */
+    @Query("SELECT u FROM User u WHERE u.email = :email AND u.isEnabled = true AND u.isActive = true")
+    Optional<User> findActiveUserByEmail(String email);
 
 }

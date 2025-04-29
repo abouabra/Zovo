@@ -1,6 +1,6 @@
 package me.abouabra.zovo.security;
 
-import me.abouabra.zovo.config.SessionProperties;
+import me.abouabra.zovo.configs.SessionProperties;
 import me.abouabra.zovo.services.UserPrincipalService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -39,7 +39,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**"};
+    private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**", "/favicon.ico"};
     private static final String[] ADMIN_ENDPOINT_PREFIX = {"/api/v1/admin/**"};
     private final UserPrincipalService userPrincipalService;
     private final int bcryptStrength;

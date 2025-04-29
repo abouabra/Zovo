@@ -1,4 +1,4 @@
-package me.abouabra.zovo.config;
+package me.abouabra.zovo.configs;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpSession;

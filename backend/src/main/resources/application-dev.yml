@@ -6,7 +6,7 @@ app:
 # Security Configuration
 security:
   bcrypt:
-    strength: 12
+    strength: 10
 
 # Server Configuration
 server:
