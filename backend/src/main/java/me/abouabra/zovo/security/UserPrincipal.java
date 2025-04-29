@@ -7,39 +7,16 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 
+
 /**
- * <p>The <code>UserPrincipal</code> class is an implementation of the <code>UserDetails</code> interface,
- * designed to integrate the application's <code>User</code> entity with Spring Security.</p>
- *
- * <p>This class acts as a bridge between the core application user data and the API required by Spring Security
- * for authentication and authorization. It wraps a <code>User</code> instance and delegates its user-related
- * information and functionalities to the <code>UserDetails</code> methods.</p>
+ * <p>The <code>UserPrincipal</code> class is an implementation of <code>UserDetails</code>
+ * used for Spring Security integration. It wraps the <code>User</code> entity
+ * and provides credential and authority information for authentication and authorization.</p>
  *
  * <ul>
- *   <li><b>User Association:</b> The <code>UserPrincipal</code> class holds a reference to a single <code>User</code>
- *   object, encapsulating its details.</li>
- *   <li><b>Role-Based Authorities:</b> The <code>getAuthorities</code> method fetches roles from the wrapped
- *   <code>User</code> object, interpreting them as granted authorities for Spring Security.</li>
- *   <li><b>ID Access:</b> Provides a method <code>getId</code> to access the ID of the encapsulated <code>User</code>.</li>
- *   <li><b>Custom String Representation:</b> Overrides the <code>toString</code> method to return
- *   the string representation of the encapsulated <code>User</code> instance.</li>
- * </ul>
- *
- * <p><b>Spring Security Integration:</b> The methods provided by the <code>UserDetails</code> interface
- * are mapped to the corresponding fields or logic in the <code>User</code> entity:</p>
- * <ul>
- *   <li><code>getPassword</code>: Retrieves the user's password.</li>
- *   <li><code>getUsername</code>: Retrieves the username of the user.</li>
- *   <li><code>getAuthorities</code>: Retrieves the roles of the user as granted authorities.</li>
- *   <li>Account status checks like <code>isAccountNonExpired</code>, <code>isAccountNonLocked</code>,
- *   <code>isCredentialsNonExpired</code>, and <code>isEnabled</code> use defaults or delegate
- *   directly to the superclass implementation.</li>
- * </ul>
- *
- * <p>This class leverages Lombok annotations for reducing boilerplate code:</p>
- * <ul>
- *   <li><code>@AllArgsConstructor</code>: Generates a constructor with all properties.</li>
- *   <li><code>@Getter</code>: Generates getter methods for the fields.</li>
+ *   <li>Delegates access to user properties, roles, and status.</li>
+ *   <li>Ensures account and credential status validity.</li>
+ *   <li>Primarily used in security contexts.</li>
  * </ul>
  */
 @AllArgsConstructor
@@ -84,12 +61,15 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return user.isEnabled() && isActive();
+    }
+
+    public boolean isActive() {
+        return user.isActive();
     }
 
     @Override
     public String toString() {
         return user.toString();
     }
-
 }

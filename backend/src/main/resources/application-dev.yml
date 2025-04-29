@@ -1,16 +1,12 @@
 #  Configuration For Development Profile
+# App Configuration
+app:
+  base-url: "http://localhost:8080"
 
 # Security Configuration
 security:
   bcrypt:
     strength: 12
-
-# Logging Configuration
-logging:
-  level:
-    root: INFO
-    org.springframework.security: TRACE
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
 
 # Server Configuration
 server:
@@ -39,6 +35,11 @@ spring:
     url: ${POSTGRES_URL}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
+    hikari:
+      auto-commit: true
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      minimum-idle: 5
+      maximum-pool-size: 20
 
   # JPA Configuration
   jpa:
@@ -47,6 +48,16 @@ spring:
       ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        connection:
+          url: ${spring.datasource.url}
+          driver_class: ${spring.datasource.driver-class-name}
+          username: ${spring.datasource.username}
+          password: ${spring.datasource.password}
+          autocommit: ${spring.datasource.hikari.auto-commit}
+          isolation: ${spring.datasource.hikari.transaction-isolation}
+          pool_size: ${spring.datasource.hikari.maximum-pool-size}
 
   # Database Migration Configuration
   flyway:
@@ -57,6 +68,21 @@ spring:
   output:
     ansi:
       enabled: ALWAYS
+
+
+  # SMTP Settings
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SMTP_USERNAME}
+    display-name: ${SMTP_DISPLAY_NAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   # OAuth2 Configuration
   security:
@@ -69,3 +95,11 @@ spring:
             scope:
               - email
               - profile
+
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    org.springframework.security: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG

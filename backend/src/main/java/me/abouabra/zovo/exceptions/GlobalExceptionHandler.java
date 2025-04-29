@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,52 +19,16 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
+
 /**
- * Global exception handler for managing errors and exceptions in a centralized manner.
+ * Provides centralized exception handling for the application.
  * <p>
- * This class utilizes the {@code @RestControllerAdvice} annotation to globally handle exceptions
- * thrown by controllers in the application. It maps different exception types to appropriate
- * HTTP response statuses and provides consistent error responses.
- * <p>
- * The handler generates responses using the {@code ErrorResponse} class, which ensures standardized
- * error structures for clients.
- *
- * <p>
- * Key features:
+ * This class uses Spring's {@code @RestControllerAdvice} to intercept exceptions
+ * and return structured {@link ErrorResponse} objects to the client.
  * <ul>
- *     <li>Handles various specific exceptions such as {@code DataIntegrityViolationException},
- *         {@code UserNotFoundException}, and {@code RoleNotFoundException}, among others.</li>
- *     <li>Returns meaningful HTTP status codes such as 404 Not Found, 409 Conflict, 400 Bad Request,
- *         and 500 Internal Server Error, depending on the exception type.</li>
- *     <li>Provides detailed feedback to users, including error codes, messages, and additional
- *         context where applicable.</li>
- *     <li>Includes a fallback handler for unexpected exceptions, ensuring no unhandled errors propagate
- *         beyond the API boundary.</li>
- * </ul>
- *
- * <p>
- * Exception types handled:
- * <ul>
- *     <li>{@code DataIntegrityViolationException} - Conflicts in database operations like duplicate keys.</li>
- *     <li>{@code UserAlreadyExistsException} - Triggered when a user with the given details already exists.</li>
- *     <li>{@code UserNotFoundException} - Triggered when a requested user is not found.</li>
- *     <li>{@code RoleNotFoundException} - Triggered when a requested role is not found.</li>
- *     <li>{@code UsernameNotFoundException} - Used primarily for user authentication issues.</li>
- *     <li>{@code NoResourceFoundException} - For identifying missing resources based on endpoint requests.</li>
- *     <li>{@code InternalAuthenticationServiceException} - For authentication service failures,
- *         including nested {@code UsernameNotFoundException} scenarios.</li>
- *     <li>{@code MethodArgumentTypeMismatchException} - When a parameter type mismatch occurs in URL or method calls.</li>
- *     <li>{@code BadCredentialsException} - For invalid login credentials.</li>
- *     <li>{@code MethodArgumentNotValidException} - For input validation failures on request bodies.</li>
- *     <li>{@code HttpMessageNotReadableException} - For malformed or unreadable JSON input payloads.</li>
- *     <li>Generic {@code Exception} - Catch-all for unexpected exceptions.</li>
- * </ul>
- *
- * <p>
- * Responsibilities:
- * <ul>
- *     <li>Logs unexpected exceptions using the application logger.</li>
- *     <li>Returns meaningful responses to facilitate debugging and enhance client interaction with the API.</li>
+ *     <li>Handles application-specific exceptions for more detailed error messages.</li>
+ *     <li>Includes fallback methods for general exceptions.</li>
+ *     <li>Ensures consistent error responses with proper HTTP status codes.</li>
  * </ul>
  */
 @RestControllerAdvice
@@ -97,13 +62,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameNotFound(UsernameNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleUsernameNotFound() {
         ErrorResponse errorResponse = new ErrorResponse("USER_NOT_FOUND", "No user found with this email.");
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleNoResourceFound() {
         ErrorResponse errorResponse = new ErrorResponse("RESOURCE_NOT_FOUND", "No Resource found with specified endpoint.");
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
@@ -122,6 +87,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabledException() {
+        ErrorResponse errorResponse = new ErrorResponse("ACCOUNT_DISABLED", "Your account is not activated. Please check your email for activation instructions.");
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
 
 
 
@@ -133,7 +103,8 @@ public class GlobalExceptionHandler {
 
 
 
-    // all the below are just general fall backs
+
+    // all the below are just general fallbacks
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
@@ -144,7 +115,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String errorMessage = "Invalid value for parameter: " + ex.getName();
-        String details = "Expected type: " + ex.getRequiredType().getName();
+        String details = "";
+        if (ex.getRequiredType() != null)
+            details = "Expected type: " + ex.getRequiredType().getName() + ", actual value: " + ex.getValue();
 
         ErrorResponse errorResponse = new ErrorResponse(errorMessage, details);
 
@@ -165,7 +138,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable() {
         ErrorResponse errorResponse = new ErrorResponse("INVALID_JSON", "Malformed or unreadable JSON input.");
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }

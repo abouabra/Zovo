@@ -9,11 +9,14 @@ import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
+import me.abouabra.zovo.services.email.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -21,18 +24,19 @@ import java.util.List;
 @Data
 public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
-    private UserRepository userRepo;
-    private RoleRepository roleRepo;
-    private UserMapper userMapper;
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepo;
+    private final RoleRepository roleRepo;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
+
 
     public List<UserResponseDTO> getAllUsers() {
         return userRepo
                 .findAll()
                 .stream()
                 .map(
-                    user -> userMapper.toDTO(user)
+                        userMapper::toDTO
                 ).toList();
     }
 

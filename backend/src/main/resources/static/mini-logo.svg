@@ -1,0 +1,36 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+	<title>New Project</title>
+	<style>
+		.s0 { fill: #ffffff } 
+		.s1 { fill: #f6b90d } 
+		.s2 { fill: #ee9f0d } 
+		.s3 { fill: #e9011a } 
+		.s4 { fill: #ca0171 } 
+		.s5 { fill: #fa088d } 
+		.s6 { fill: #07c3d4 } 
+		.s7 { fill: #3851a3 } 
+		.s8 { fill: #930886 } 
+		.s9 { fill: #05eaff } 
+	</style>
+	<g id="Folder 1">
+		<path id="Z" class="s0" aria-label="Z"  d="m725.1 757.2h-257.7l256.6-642.1h-448.2v128.9h258.8l-257.7 642h448.2z"/>
+		<g id="OVO">
+			<path id="O  O" class="s0" aria-label="O  O"  d="m696.5 686.5c0-21.5-17.6-39.1-39.1-39.1-21.5 0-39.1 17.6-39.1 39.1 0 21.5 17.6 39.1 39.1 39.1 21.5 0 39.1-17.6 39.1-39.1zm-60.8 0c0-12.1 9.6-21.7 21.7-21.7 12 0 21.6 9.6 21.6 21.7 0 12-9.6 21.6-21.6 21.6-12.1 0-21.7-9.6-21.7-21.6zm71.9-34.3v69.5h17.5v-69.5zm-11.2-165.4c0-21.6-17.6-39.2-39.1-39.2-21.5 0-39.1 17.6-39.1 39.2 0 21.5 17.6 39.1 39.1 39.1 21.5 0 39.1-17.6 39.1-39.1zm-60.7 0c0-12.1 9.6-21.7 21.6-21.7 12.1 0 21.7 9.6 21.7 21.7 0 12-9.6 21.6-21.7 21.6-12 0-21.6-9.6-21.6-21.6zm71.9-34.3v69.4h17.4v-69.4z"/>
+			<g id="Folder 1 copy">
+				<g id="Layer copy 11">
+					<g>
+						<path fill-rule="evenodd" class="s1" d="m634.2 637.1v-34.9l30.2 17.2z"/>
+						<path fill-rule="evenodd" class="s2" d="m664.4 619.4v-34.9l-30.2 17.7z"/>
+						<path fill-rule="evenodd" class="s3" d="m664.4 619.4v-34.9l30.3 17.2z"/>
+						<path fill-rule="evenodd" class="s4" d="m694.7 601.7v-34.9l-30.3 17.7z"/>
+						<path fill-rule="evenodd" class="s5" d="m694.7 601.7v-34.9l30.2 17.3z"/>
+						<path fill-rule="evenodd" class="s6" d="m618.1 527.9v34.9l30.3-17.3z"/>
+						<path fill-rule="evenodd" class="s7" d="m664.4 549.2v35.3l-30.2-18.1z"/>
+						<path fill-rule="evenodd" class="s8" d="m664.4 549.2v35.3l30.3-17.7z"/>
+						<path fill-rule="evenodd" class="s9" d="m625 565.8v16.6l-14.4-8.4z"/>
+					</g>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

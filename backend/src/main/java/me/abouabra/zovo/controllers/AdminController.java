@@ -19,7 +19,7 @@ import java.util.Map;
 
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/api/v1/admin")
 @AllArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {

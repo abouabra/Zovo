@@ -9,15 +9,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 
+
 /**
- * <p>The <code>User</code> class represents an application user entity.</p>
+ * <p>The <code>User</code> class represents a system user entity.</p>
  *
- * <p>This class is mapped to the "users" table and includes the following:</p>
+ * <p>This class is a JPA entity mapped to the "users" table with fields for
+ * storing key user details such as username, email, and password. It also includes
+ * user roles, status, and timestamp information.</p>
+ *
  * <ul>
- *   <li>Unique <code>username</code> and <code>email</code> fields.</li>
- *   <li><code>password</code> field, excluded from JSON serialization.</li>
- *   <li><code>createdAt</code> field for timestamp management.</li>
- *   <li>Association with <code>Role</code> entities to define user roles.</li>
+ *   <li>Supports unique constraints on username and email.</li>
+ *   <li>Links to roles using a Many-to-Many relationship.</li>
+ *   <li>Manages user activity & enablement status.</li>
  * </ul>
  */
 @Entity
@@ -54,4 +57,10 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @Column(nullable = false, name = "\"isActive\"")
+    private boolean isActive = false;
+
+    @Column(nullable = false, name = "\"isEnabled\"")
+    private boolean isEnabled = false;
 }

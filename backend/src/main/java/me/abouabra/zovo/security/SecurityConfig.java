@@ -17,33 +17,30 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.AuthenticationEntryPoint;
-import org.springframework.security.web.access.AccessDeniedHandler;
+
 
 /**
- * <p>The <code>SecurityConfig</code> class is a configuration class responsible for setting up
- * the application's security behavior using Spring Security.</p>
+ * <p>The <code>SecurityConfig</code> class is a configuration class for setting up security policies and
+ * integrating Spring Security into the application.</p>
  *
- * <p>It defines components like authentication providers, filters, password encoders, and security
- * policies to manage access control, user authentication, and session handling.</p>
+ * <p>It configures authentication, authorization, custom security behavior, and session handling using
+ * Spring Security's APIs. This includes defining public and protected endpoints, password encoding,
+ * and exception handling.</p>
  *
- * <p>Key functionalities:</p>
- * <ul>
- *   <li>Configures a <code>SecurityFilterChain</code> with endpoint access rules and exception handling.</li>
- *   <li>Provides beans for <code>AuthenticationManager</code>, <code>PasswordEncoder</code>, and
- *   security context handling.</li>
- *   <li>Delegates user authentication to <code>UserPrincipalService</code>.</li>
- * </ul>
+ * <p>Annotated with <code>@Configuration</code> and <code>@EnableWebSecurity</code>, it enables security
+ * support and customization within the Spring context.</p>
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private static final String[] PUBLIC_ENDPOINTS = {"/auth/login", "/auth/register"};
-    private static final String ADMIN_ENDPOINT_PREFIX = "/admin/**";
+    private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**"};
+    private static final String[] ADMIN_ENDPOINT_PREFIX = {"/api/v1/admin/**"};
     private final UserPrincipalService userPrincipalService;
     private final int bcryptStrength;
     private final SessionProperties sessionProperties;
@@ -52,8 +49,8 @@ public class SecurityConfig {
      * Constructs a SecurityConfig instance to configure security-related components.
      *
      * @param userPrincipalService the service to manage user authentication and details retrieval.
-     * @param bcryptStrength the strength parameter for BCrypt password encoding.
-     * @param sessionProperties the configuration properties for managing HTTP session cookies.
+     * @param bcryptStrength       the strength parameter for BCrypt password encoding.
+     * @param sessionProperties    the configuration properties for managing HTTP session cookies.
      */
     public SecurityConfig(UserPrincipalService userPrincipalService, @Value("${security.bcrypt.strength}") int bcryptStrength, SessionProperties sessionProperties) {
         this.userPrincipalService = userPrincipalService;
@@ -65,8 +62,8 @@ public class SecurityConfig {
     /**
      * Configures and builds a {@link SecurityFilterChain} for application security settings.
      *
-     * @param httpSecurity the {@link HttpSecurity} object to configure security.
-     * @param authEntryPoint the custom {@link AuthenticationEntryPoint} for handling authentication errors.
+     * @param httpSecurity        the {@link HttpSecurity} object to configure security.
+     * @param authEntryPoint      the custom {@link AuthenticationEntryPoint} for handling authentication errors.
      * @param accessDeniedHandler the custom {@link AccessDeniedHandler} for handling access denials.
      * @return the configured {@link SecurityFilterChain}.
      * @throws Exception if an error occurs during configuration.
