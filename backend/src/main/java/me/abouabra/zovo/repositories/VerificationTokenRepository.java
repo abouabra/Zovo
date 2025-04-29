@@ -42,4 +42,15 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
     @Modifying
     @Query("DELETE FROM VerificationToken t WHERE t.user = :user")
     void deleteByUser(User user);
+
+    /**
+     * Deletes all verification tokens that have expired on or before the specified date and time.
+     *
+     * @param now the {@link ZonedDateTime} threshold for deleting expired tokens; tokens with
+     *            an expiration date earlier than or equal to this will be removed.
+     */
+    @Modifying
+    @Query("DELETE FROM VerificationToken t WHERE t.expiredAt <= :now")
+    void deleteAllExpiredSince(ZonedDateTime now);
+
 }
