@@ -9,8 +9,10 @@ import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
+import me.abouabra.zovo.utils.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,29 +31,27 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
 
-
     @Transactional
-    public List<UserResponseDTO> getAllUsers() {
-        return userRepo
+    public ResponseEntity<? extends ApiResponse<?>> getAllUsers() {
+        List<UserResponseDTO> dtoList = userRepo
                 .findAll()
                 .stream()
-                .map(
-                        userMapper::toDTO
-                ).toList();
+                .map(userMapper::toDTO)
+                .toList();
+        return ApiResponse.success(dtoList);
     }
 
-    public UserResponseDTO getUserById(int userId) {
+    public ResponseEntity<? extends ApiResponse<?>> getUserById(int userId) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with id '%d' was not found".formatted(userId)));
-
-        return userMapper.toDTO(user);
+        return ApiResponse.success(userMapper.toDTO(user));
     }
 
-    public UserResponseDTO getLoggedInUserData(UserPrincipal loggedInUser) {
-        return userMapper.toDTO(loggedInUser.getUser());
+    public ResponseEntity<? extends ApiResponse<?>> getLoggedInUserData(UserPrincipal loggedInUser) {
+        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser()));
     }
 
-    public UserResponseDTO testAdminEligibility(UserPrincipal loggedInUser) {
-        return userMapper.toDTO(loggedInUser.getUser());
+    public ResponseEntity<? extends ApiResponse<?>> testAdminEligibility(UserPrincipal loggedInUser) {
+        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser()));
     }
 }

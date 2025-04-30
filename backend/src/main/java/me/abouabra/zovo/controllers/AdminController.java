@@ -2,10 +2,9 @@ package me.abouabra.zovo.controllers;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.AllArgsConstructor;
-import me.abouabra.zovo.dtos.UserResponseDTO;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.UserService;
-import org.springframework.http.HttpStatus;
+import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,19 +26,18 @@ public class AdminController {
 
     @GetMapping("/test")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponseDTO> testAdminEligibility(@AuthenticationPrincipal UserPrincipal loggedInUser) {
-        UserResponseDTO dto = userService.testAdminEligibility(loggedInUser);
-        return new ResponseEntity<>(dto, HttpStatus.OK);
+    public ResponseEntity<? extends ApiResponse<?>> testAdminEligibility(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return userService.testAdminEligibility(loggedInUser);
     }
 
     @GetMapping("/user-sessions/")
-    public ResponseEntity<Map<String, Object>> getSessionInfo(HttpSession session) {
+    public ResponseEntity<? extends ApiResponse<?>> getSessionInfo(HttpSession session) {
         Map<String, Object> info = new HashMap<>();
         info.put("sessionId", session.getId());
         info.put("creationTime", new Date(session.getCreationTime()));
         info.put("lastAccessedTime", new Date(session.getLastAccessedTime()));
         info.put("MaxAge", session.getMaxInactiveInterval());
         info.put("sessionStatus", session.getAttribute("SPRING_SECURITY_CONTEXT"));
-        return ResponseEntity.ok(info);
+        return ApiResponse.success(info);
     }
 }

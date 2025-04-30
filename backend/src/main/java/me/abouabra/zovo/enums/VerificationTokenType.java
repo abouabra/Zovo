@@ -5,6 +5,19 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Represents types of verification tokens used for email communication.
+ * <p>
+ * Each token type is associated with a specific email template, such as
+ * confirming email, resetting passwords, or sending welcome messages.
+ * </p>
+ *
+ * <ul>
+ *   <li><b>CONFIRM_EMAIL</b>: Email confirmation token.</li>
+ *   <li><b>PASSWORD_RESET</b>: Password reset token.</li>
+ *   <li><b>WELCOME_EMAIL</b>: Welcome email token.</li>
+ * </ul>
+ */
 public enum VerificationTokenType {
     CONFIRM_EMAIL("email/confirm-email"),
     PASSWORD_RESET("email/password-reset"),

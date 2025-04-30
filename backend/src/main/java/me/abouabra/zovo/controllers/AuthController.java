@@ -7,163 +7,159 @@ import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
+import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
-
-
-/**
- * The {@code AuthController} class provides REST API endpoints for handling
- * various authentication and authorization functionalities, such as user
- * registration, login, logout, email confirmation, password reset, and
- * two-factor authentication (2FA).
- * <p>
- * It interacts with {@code AuthService} to perform these operations and returns
- * appropriate HTTP responses.
- */
 @RestController
 @RequestMapping("/api/v1/auth")
 @AllArgsConstructor
 public class AuthController {
     private AuthService authService;
 
+    
     /**
-     * Handles user registration by accepting user details, validating them, and registering the user.
+     * Handles user registration by processing the provided registration details.
      *
-     * @param registerDTO a {@code UserRegisterDTO} object containing the user registration details such as username, email, password, and password confirmation.
-     * @return a {@code ResponseEntity} containing a {@code UserResponseDTO} with the registered user's details such as ID, username, and email.
+     * @param registerDTO the user registration details, including username, email,
+     *                    password, and password confirmation, must be valid.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} object with
+     *         success status and relevant data or error message.
      */
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@Valid @RequestBody UserRegisterDTO registerDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> register(@Valid @RequestBody UserRegisterDTO registerDTO) {
         return authService.register(registerDTO);
     }
 
+    
     /**
-     * Authenticates a user by validating the provided login credentials.
-     * If successful, the user's authentication context is established.
+     * Authenticates a user using the provided login credentials.
      *
-     * @param loginDTO an object of {@code UserLoginDTO} containing the username and password for login.
-     * @param request the {@code HttpServletRequest} to manage session attributes for the authenticated user.
-     * @return a {@code ResponseEntity} containing a {@code UserResponseDTO} with the authenticated user's details such as ID, username, and email.
+     * @param loginDTO the user's login details including email and password.
+     * @param request the HTTP request object.
+     * @param response the HTTP response object.
+     * @return a response entity containing an {@code ApiResponse} indicating the success or failure of the login operation.
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<? extends ApiResponse<?>> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
         return authService.login(loginDTO, request, response);
     }
 
+    /**
+     * Processes two-factor authentication (2FA) login request.
+     *
+     * @param tokenAndCodeDTO the DTO containing the temporary token and 2FA code.
+     * @param request the HTTP request object.
+     * @param response the HTTP response object.
+     * @return a {@code ResponseEntity} containing an {@code ApiResponse} with the login result.
+     */
     @PostMapping("/login-2fa")
-    public ResponseEntity<?> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<? extends ApiResponse<?>> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
         return authService.loginWith2FA(tokenAndCodeDTO, request, response);
     }
 
-
-
-
-        /**
-         * Logs out the currently authenticated user by invalidating their session
-         * and clearing associated authentication details.
-         * <p>
-         * This endpoint performs the following actions:
-         * <ul>
-         *   <li>Invalidates the user's HTTP session if it exists.</li>
-         *   <li>Clears the authentication context to remove authentication details.</li>
-         *   <li>Removes any session-related cookies such as {@code JSESSIONID}.</li>
-         *   <li>Ensures the user's session is securely terminated.</li>
-         * </ul>
-         *
-         * @param request  the {@code HttpServletRequest} object, providing access to session data for the current user.
-         * @param response the {@code HttpServletResponse} object, used to modify response headers or cookies as needed.
-         */
+    
+    /**
+     * Logs out the currently authenticated user by invalidating their session
+     * and clearing the security context.
+     *
+     * @param request  the HTTP request containing user-related session information
+     * @param response the HTTP response to send back the logout status or handle cookies
+     */
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        authService.logout(request, response);
+    public ResponseEntity<? extends ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
+        return authService.logout(request, response);
     }
 
+    
     /**
-     * Verifies the user's email using the provided token and activates the account if valid.
+     * Confirms a user's email using a provided verification token.
      *
-     * @param token the verification token sent to the user's email.
-     * @return a {@code ResponseEntity} containing a map with a status and message
-     * indicating the success or failure of the email confirmation.
+     * @param token the email verification token
+     * @return a ResponseEntity containing an ApiResponse with the email confirmation result
      */
     @GetMapping("/confirm-email")
-    public ResponseEntity<Map<String, String>> confirmEmail(@RequestParam("token") String token) {
+    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestParam("token") String token) {
         return authService.confirmEmail(token);
     }
 
+    
     /**
-     * Sends a password reset token to the specified email address
-     * if the user exists and is active.
+     * Sends a password-reset verification token to the specified email address.
+     * <p>
+     * This operation is performed only if the email belongs to an active user.
      *
-     * @param email the email address of the user requesting a password reset.
-     * @return a {@code ResponseEntity} containing a map with the status and message
-     * indicating the outcome of the operation.
+     * @param email The email address of the user requesting a password reset.
+     * @return A ResponseEntity containing an ApiResponse indicating the success or failure of the operation.
      */
     @GetMapping("/send-password-reset")
-    public ResponseEntity<Map<String, String>> sendVerifyPasswordResetToken(@RequestParam("email") String email) {
+    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(@RequestParam("email") String email) {
         return authService.sendVerifyPasswordResetToken(email);
     }
 
+    
     /**
-     * Verifies the provided password reset token and returns a corresponding response.
+     * Verifies the validity of a password reset token.
      *
-     * @param token the password reset token to validate.
-     * @return a {@code ResponseEntity} containing a {@code Map<String, String>} with the status and message
-     * indicating whether the token is valid or expired.
+     * @param token the password reset token to be validated.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with
+     *         the validation result, indicating success or failure.
      */
     @GetMapping("/password-reset")
-    public ResponseEntity<Map<String, String>> verifyPasswordResetToken(@RequestParam("token") String token) {
+    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestParam("token") String token) {
         return authService.verifyPasswordResetToken(token);
     }
 
+    
     /**
-     * Resets the user's password using the provided token and new password details.
+     * Processes a password reset request by validating the provided token and updating the password.
      *
-     * @param passwordResetDTO a {@code PasswordResetDTO} object containing the password reset token, new password,
+     * @param passwordResetDTO the data transfer object containing the reset token, new password,
      *                         and password confirmation.
-     * @return a {@code ResponseEntity} containing a {@code Map<String, String>} with the status and message
-     *         indicating the result of the password reset operation.
+     * @return a ResponseEntity containing an ApiResponse to indicate the success or failure of the operation.
      */
     @PostMapping("/password-reset")
-    public ResponseEntity<Map<String, String>> changePassword(@Valid @RequestBody PasswordResetDTO passwordResetDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> changePassword(@Valid @RequestBody PasswordResetDTO passwordResetDTO) {
        return authService.changePassword(passwordResetDTO);
     }
 
+    
     /**
-     * Generates a 2FA QR code and secret for the logged-in user.
+     * Generates a Two-Factor Authentication (2FA) QR code for the authenticated user.
      *
-     * @param loggedInUser the authenticated user for whom 2FA is being generated.
-     * @return a {@code ResponseEntity} containing the details required for 2FA setup.
+     * @param loggedInUser the authenticated user requesting 2FA generation.
+     * @return a {@link ResponseEntity} containing the {@link ApiResponse} with 2FA QR code details or error message.
      */
     @GetMapping("/2fa/generate")
-    public ResponseEntity<?> generate2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+    public ResponseEntity<? extends ApiResponse<?>> generate2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
         return authService.generate2FA(loggedInUser);
     }
 
+    
     /**
-     * Enables two-factor authentication (2FA) for the logged-in user using the provided 2FA code.
+     * Enables Two-Factor Authentication (2FA) for the logged-in user.
      *
-     * @param loggedInUser the currently authenticated user.
-     * @param twoFaCodeDTO the {@code TwoFaCodeDTO} containing the 2FA code for verification.
-     * @return a {@code ResponseEntity} representing the result of the operation.
+     * @param loggedInUser The current authenticated user.
+     * @param twoFaCodeDTO The DTO containing the 2FA code to verify.
+     * @return A {@code ResponseEntity} wrapping {@code ApiResponse} indicating
+     *         the success or failure of enabling 2FA.
      */
     @PostMapping("/2fa/enable")
-    public ResponseEntity<?> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
         return authService.enable2FA(loggedInUser, twoFaCodeDTO);
     }
 
 
+    
     /**
-     * Disables two-factor authentication (2FA) for the currently authenticated user.
+     * Disables Two-Factor Authentication (2FA) for the currently authenticated user.
      *
-     * @param loggedInUser the currently authenticated user represented by {@code UserPrincipal}.
-     * @return a {@code ResponseEntity} containing the result of the 2FA disable operation.
+     * @param loggedInUser the details of the authenticated user.
+     * @return a ResponseEntity with an ApiResponse indicating the result of the operation.
      */
     @DeleteMapping("/2fa/disable")
-    public ResponseEntity<?> disable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+    public ResponseEntity<? extends ApiResponse<?>> disable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
         return authService.disable2FA(loggedInUser);
     }
 }

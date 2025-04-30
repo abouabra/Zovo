@@ -1,8 +1,8 @@
 package me.abouabra.zovo.exceptions;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
+import lombok.extern.slf4j.Slf4j;
+import me.abouabra.zovo.enums.ApiCode;
+import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,146 +22,104 @@ import java.util.List;
 
 
 /**
- * Provides centralized exception handling for the application.
+ * Global exception handler that intercepts and handles various application-level
+ * exceptions, providing structured API responses for clients.
  * <p>
- * This class uses Spring's {@code @RestControllerAdvice} to intercept exceptions
- * and return structured {@link ErrorResponse} objects to the client.
- * <ul>
- *     <li>Handles application-specific exceptions for more detailed error messages.</li>
- *     <li>Includes fallback methods for general exceptions.</li>
- *     <li>Ensures consistent error responses with proper HTTP status codes.</li>
- * </ul>
+ * Uses Spring's {@code @RestControllerAdvice} to catch exceptions thrown
+ * in the application and return meaningful HTTP responses with appropriate status codes and messages.
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        String message = ex.getMostSpecificCause().getMessage(); // gets "Key (email)=... already exists"
-        ErrorResponse errorResponse = new ErrorResponse("DUPLICATE_KEY", "A record with the same unique field already exists.", List.of(message));
-        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
-    }
-
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("USER_ALREADY_EXISTS", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    public ResponseEntity<? extends ApiResponse<?>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return ApiResponse.failure(HttpStatus.CONFLICT, ApiCode.USER_ALREADY_EXISTS, ex.getMessage());
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFoundException(UserNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("USER_NOT_FOUND", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    public ResponseEntity<? extends ApiResponse<?>> handleUserNotFoundException(UserNotFoundException ex) {
+        return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.USER_NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleRoleNotFoundException(RoleNotFoundException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("ROLE_NOT_FOUND", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    public ResponseEntity<? extends ApiResponse<?>> handleRoleNotFoundException() {
+        return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.ROLE_NOT_FOUND, "No role found with this name.");
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameNotFound() {
-        ErrorResponse errorResponse = new ErrorResponse("USER_NOT_FOUND", "No user found with this email.");
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    public ResponseEntity<? extends ApiResponse<?>> handleUsernameNotFound() {
+        return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.USER_NOT_FOUND, "No user found with this email.");
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound() {
-        ErrorResponse errorResponse = new ErrorResponse("RESOURCE_NOT_FOUND", "No Resource found with specified endpoint.");
-        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    public ResponseEntity<? extends ApiResponse<?>> handleNoResourceFound() {
+        return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.RESOURCE_NOT_FOUND, "The requested endpoint or resource could not be found. Please check the URL and try again.");
     }
 
 
     @ExceptionHandler(InternalAuthenticationServiceException.class)
-    public ResponseEntity<ErrorResponse> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException ex) {
         // Check if the cause is UsernameNotFoundException
-        if (ex.getCause() instanceof UsernameNotFoundException) {
-            ErrorResponse errorResponse = new ErrorResponse("USER_NOT_FOUND", "No user found with this email.");
-            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
-        }
+        if (ex.getCause() instanceof UsernameNotFoundException)
+            return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.USER_NOT_FOUND, "No user found with this email.");
 
-        // Handle other internal authentication errors
-        ErrorResponse errorResponse = new ErrorResponse("AUTHENTICATION_ERROR", "Authentication failed");
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        return ApiResponse.failure(HttpStatus.UNAUTHORIZED, ApiCode.UNAUTHORIZED, "Authentication failed");
     }
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ErrorResponse> handleDisabledException() {
-        ErrorResponse errorResponse = new ErrorResponse("ACCOUNT_DISABLED", "Your account is not activated. Please check your email for activation instructions.");
-        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    public ResponseEntity<? extends ApiResponse<?>> handleDisabledException() {
+        return ApiResponse.failure(ApiCode.ACCOUNT_DISABLED, "Your account is not activated. Please check your email for activation instructions.");
     }
 
     @ExceptionHandler(RateLimitedException.class)
-    public ResponseEntity<ErrorResponse> handleRateLimitedException(RateLimitedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("RATE_LIMITED", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    public ResponseEntity<? extends ApiResponse<?>> handleRateLimitedException(RateLimitedException ex) {
+        return ApiResponse.failure(ApiCode.RATE_LIMITED, ex.getMessage());
     }
-
-    
-
-
-
-
-
-
-
-
-
-
 
 
     // all the below are just general fallbacks
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("METHOD_NOT_SUPPORTED", "HTTP request method not supported.", List.of(ex.getMessage()));
-        return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
+    public ResponseEntity<? extends ApiResponse<?>> handleHttpRequestMethodNotSupported() {
+        return ApiResponse.failure(HttpStatus.METHOD_NOT_ALLOWED, ApiCode.METHOD_NOT_ALLOWED, "HTTP request method not supported.");
     }
+
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("BAD_CREDENTIALS", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<? extends ApiResponse<?>> handleBadCredentials(BadCredentialsException ex) {
+        return ApiResponse.failure(ApiCode.BAD_CREDENTIALS, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
         String errorMessage = "Invalid value for parameter: " + ex.getName();
         String details = "";
         if (ex.getRequiredType() != null)
             details = "Expected type: " + ex.getRequiredType().getName() + ", actual value: " + ex.getValue();
 
-        ErrorResponse errorResponse = new ErrorResponse(errorMessage, details);
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return ApiResponse.failure(HttpStatus.BAD_REQUEST, ApiCode.INVALID_VALUE, errorMessage, List.of(details));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         List<String> validationErrors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(error -> String.format("'%s': %s", error.getField(), error.getDefaultMessage()))
                 .toList();
-
-        ErrorResponse errorResponse = new ErrorResponse("VALIDATION_ERROR", "Input validation failed for one or more fields.", validationErrors);
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return ApiResponse.failure(HttpStatus.BAD_REQUEST, ApiCode.INVALID_VALUE, "Input validation failed for one or more fields.", validationErrors);
     }
 
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable() {
-        ErrorResponse errorResponse = new ErrorResponse("INVALID_JSON", "Malformed or unreadable JSON input.");
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<? extends ApiResponse<?>> handleHttpMessageNotReadable() {
+        return ApiResponse.failure(ApiCode.INVALID_JSON, "Malformed or unreadable JSON input.");
     }
 
 
     //     Catch-all for unexpected exceptions
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleAllUncaughtExceptions(Exception ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleAllUncaughtExceptions(Exception ex) {
         log.error("Unexpected error occurred", ex);
-        return new ErrorResponse("INTERNAL_SERVER_ERROR", "An unexpected error occurred");
+        return ApiResponse.failure(ApiCode.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
     }
 }

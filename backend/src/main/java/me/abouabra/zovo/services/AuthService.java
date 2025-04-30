@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.configs.SessionProperties;
 import me.abouabra.zovo.dtos.*;
+import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.enums.VerificationTokenType;
 import me.abouabra.zovo.exceptions.RateLimitedException;
 import me.abouabra.zovo.exceptions.RoleNotFoundException;
@@ -22,7 +23,7 @@ import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
-import me.abouabra.zovo.utils.ResponseBuilder;
+import me.abouabra.zovo.utils.ApiResponse;
 import org.apache.commons.codec.binary.Base32;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,14 +50,12 @@ import java.util.stream.Collectors;
 
 
 /**
- * The {@code AuthService} class handles authentication and authorization tasks.
+ * The {@code AuthService} class provides authentication and authorization
+ * functionalities, such as user registration, login, email verification,
+ * password reset, and two-factor authentication (2FA) management.
  * <p>
- * It includes user registration, login, email verification, password management,
- * and session handling functionalities.
- * </p>
- * <p>
- * Dependencies like repositories, mappers, and utilities are used for seamless
- * communication with underlying services and data persistence layers.
+ * This service integrates with various components like repositories,
+ * encryption, and email services to handle secure user account operations.
  * </p>
  */
 @Service
@@ -71,7 +70,6 @@ public class AuthService {
     private final SessionProperties sessionProperties;
     private final EmailService emailService;
     private final VerificationTokenService verificationTokenService;
-    private final ResponseBuilder responseBuilder;
     private final RateLimitingService rateLimitingService;
     private final SecretEncryptionService encryptionService;
 
@@ -80,17 +78,19 @@ public class AuthService {
     private final Map<String, String> twoFactorSessions = new HashMap<>();
 
     /**
-     * Registers a new user based on the provided user registration details.
+     * Registers a new user and sends a verification email.
      * <p>
-     * If the username or email is already in use, an exception will be thrown.
-     * Upon successful registration, a verification email is sent asynchronously to the user.
+     * Validates if the username or email already exists, throws an exception if either is taken.
+     * Saves the new user and assigns the default "ROLE_USER".
+     * Sends an email with a verification token asynchronously.
+     * </p>
      *
-     * @param requestDTO the user registration details containing username, email, and other required fields
-     * @return a response entity containing a success message with a map of details
-     * @throws UserAlreadyExistsException if the username or email is already in use
-     * @throws RoleNotFoundException if the default user role is not found
+     * @param requestDTO the user registration details including username, email, and password.
+     * @return a {@link ResponseEntity} containing a success message upon successful registration.
+     * @throws UserAlreadyExistsException if the username or email is already in use.
+     * @throws RoleNotFoundException if the default role is not found in the database.
      */
-    public ResponseEntity<Map<String, String>> register(@Valid UserRegisterDTO requestDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> register(@Valid UserRegisterDTO requestDTO) {
         if (userRepo.existsByUsernameOrEmail(requestDTO.getUsername(), requestDTO.getEmail())) {
             if (userRepo.findUserByUsername(requestDTO.getUsername()).isPresent()) {
                 throw new UserAlreadyExistsException("Username '%s' is already taken".formatted(requestDTO.getUsername()));
@@ -111,21 +111,21 @@ public class AuthService {
             emailService.sendMailAsync(user.getEmail(), VerificationTokenType.CONFIRM_EMAIL, UUIDToken);
         });
 
-        return responseBuilder.success("User has been registered successfully. Please check your email for verification link");
+        return ApiResponse.success("User has been registered successfully. Please check your email for verification link");
     }
 
     /**
-     * Handles user login functionality, including authentication, rate-limiting checks,
-     * and two-factor authentication if enabled.
+     * Handles user login by authenticating the provided credentials, handling rate limiting,
+     * and verifying if two-factor authentication (2FA) is required.
      *
-     * @param loginDTO      A DTO containing login credentials such as email and password.
-     * @param request       The HttpServletRequest object for the current login attempt.
-     * @param response      The HttpServletResponse object for setting cookies or responses.
-     * @return A ResponseEntity containing the login result, including user details,
-     *                      2FA requirements, or error messages.
+     * @param loginDTO       Object containing user's login credentials.
+     * @param request        HttpServletRequest object to manage session and request details.
+     * @param response       HttpServletResponse object to add cookies or modify response details.
+     * @return ResponseEntity containing the login result, which can include user details or
+     *         a 2FA requirement status if enabled.
      */
     @Transactional
-    public ResponseEntity<?> login(UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<? extends ApiResponse<?>> login(UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
         try {
             if (rateLimitingService.isRateLimited(loginDTO.getEmail(), "login")) {
                 long timeRemaining = rateLimitingService.getLockoutDurationRemaining(
@@ -141,22 +141,16 @@ public class AuthService {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User user = userPrincipal.getUser();
 
-            // Check if 2FA is enabled
             if (user.isTwoFactorEnabled()) {
-                // Generate a temporary token valid for 5 minutes
                 String token = UUID.randomUUID().toString();
 
-                // Store email associated with this temporary token (in-memory or Redis in production)
                 twoFactorSessions.put(token, user.getEmail());
                 log.info("2FA is enabled for user: {}", user.getEmail());
 
-                // Return response indicating 2FA is required
-                Map<String, String> responseMap = new HashMap<>();
-                responseMap.put("status", "2FA_REQUIRED");
-                responseMap.put("token", token);
-                responseMap.put("message", "Please enter your 2FA code to complete login");
-
-                return ResponseEntity.ok(responseMap);
+                return ApiResponse.success("Please enter your 2FA code to complete login",
+                                            ApiCode.LOGIN_NEEDS_2FA,
+                                            Map.of("token", token)
+                );
             }
 
             SecurityContext context = createAndSetSecurityContext(authentication);
@@ -169,7 +163,7 @@ public class AuthService {
 
             UserResponseDTO responseDTO = userMapper.toDTO(userPrincipal.getUser());
 
-            return ResponseEntity.ok(responseDTO);
+            return ApiResponse.success("Logged in successfully", responseDTO);
         } catch (BadCredentialsException e) {
             rateLimitingService.recordFailedAttempt(loginDTO.getEmail(), "login");
             throw new BadCredentialsException(e.getMessage());
@@ -177,22 +171,24 @@ public class AuthService {
     }
 
     /**
-     * Handles user login with Two-Factor Authentication (2FA). Validates the provided 2FA code
-     * and token and establishes a new authenticated session on success.
+     * Handles two-factor authentication login by verifying the provided token and code.
      *
-     * @param tokenAndCodeDTO an object containing the temporary token and 2FA code for validation.
-     * @param request the HTTP servlet request used for session and security context updates.
-     * @param response the HTTP servlet response used to set session cookies.
-     * @return a ResponseEntity containing the user information if login is successful,
-     *         or an error message if validation fails or an exception occurs.
+     * <p>This method validates the temporary token, verifies the 2FA code, manages session contexts,
+     * and enforces rate limits for failed attempts to ensure security.</p>
+     *
+     * @param tokenAndCodeDTO the DTO containing the temporary token and the 2FA code.
+     * @param request the {@code HttpServletRequest} used for managing session information.
+     * @param response the {@code HttpServletResponse} used for adding session-related cookies.
+     * @return a {@code ResponseEntity} containing an {@code ApiResponse}, either success with user data
+     * or failure with error details.
      */
     @Transactional
-    public ResponseEntity<?> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<? extends ApiResponse<?>> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
         String tempToken = tokenAndCodeDTO.getToken();
         String email = twoFactorSessions.get(tempToken);
 
         if (email == null)
-            return responseBuilder.error("Invalid or expired token. Please login again.");
+            return ApiResponse.failure(ApiCode.TWO_FACTOR_AUTH_REQUIRED, "Invalid or expired token. Please login again.");
 
         if (rateLimitingService.isRateLimited(email, "2fa_verify")) {
             long timeRemaining = rateLimitingService.getLockoutDurationRemaining(email, "login");
@@ -212,7 +208,7 @@ public class AuthService {
 
         if (!isValid) {
             rateLimitingService.recordFailedAttempt(email, "2fa_verify");
-            return responseBuilder.error("Invalid 2FA code");
+            return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, "Invalid 2FA code");
         }
 
         twoFactorSessions.remove(tempToken);
@@ -235,58 +231,59 @@ public class AuthService {
 
         UserResponseDTO responseDTO = userMapper.toDTO(user);
 
-        return ResponseEntity.ok(responseDTO);
-
+        return ApiResponse.success("Logged in successfully", responseDTO);
     }
 
     /**
-     * Logs out the current user by invalidating the session and clearing the security context.
+     * Logs out the user by invalidating their session and clearing security context.
+     * <p>Ensures the session cookie is expired and the user is securely logged out.</p>
      *
-     * <p>This method ensures the session cookie is expired and the user's authentication is cleared.
-     *
-     * @param request  the HttpServletRequest from the client
-     * @param response the HttpServletResponse to send feedback to the client
+     * @param request  the HTTP request containing the user's session
+     * @param response the HTTP response to modify with an expired session cookie
      */
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<? extends ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
 
-        if (session != null) {
-            response.addCookie(sessionProperties.createExpiredSessionCookie(session.getId()));
-            session.invalidate();
+        if (session == null) {
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "User is not logged in");
         }
+
+        response.addCookie(sessionProperties.createExpiredSessionCookie(session.getId()));
+        session.invalidate();
 
         SecurityContextHolder.clearContext();
         log.info("User has been logged out");
+        return ApiResponse.success("User logged out successfully");
     }
 
     /**
-     * Confirms the email address of a user using the provided token.
+     * Confirms the email address associated with a verification token.
+     * Validates the token and activates the user if valid.
      *
-     * <p>Validates the token, activates the user's account upon success, and deletes
-     * the associated verification token.</p>
-     *
-     * @param token the email verification token to be validated
-     * @return a ResponseEntity containing a success or error message
+     * @param token the verification token to validate for email confirmation
+     * @return a ResponseEntity containing the result of the email confirmation
+     *         as a success or failure response
      */
     @Transactional()
-    public ResponseEntity<Map<String, String>> confirmEmail(String token) {
+    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(String token) {
         return verificationTokenService.validateToken(token, VerificationTokenType.CONFIRM_EMAIL)
                 .map(verificationToken -> {
                     User user = verificationToken.getUser();
                     activateUser(user);
                     verificationTokenService.deleteTokenByUser(user);
-                    return responseBuilder.success("Your email has been successfully verified");
+                    return ApiResponse.success("Your email has been successfully verified");
                 })
-                .orElse(responseBuilder.error("Invalid or expired verification token"));
+                .orElse(ApiResponse.failure(ApiCode.INVALID_VERIFICATION_TOKEN, "Invalid or expired verification token"));
     }
 
+
     /**
-     * Sends a verification token for password reset to the specified email address if the user exists and is active.
+     * Sends a password reset verification token to the user's email if the email belongs to an active user.
      *
-     * @param email the email address of the user to send the password-reset token.
-     * @return a {@link ResponseEntity} containing a map with a success or error message.
+     * @param email The email address of the user requesting a password reset.
+     * @return A ResponseEntity containing an ApiResponse indicating the success or failure of the operation.
      */
-    public ResponseEntity<Map<String, String>> sendVerifyPasswordResetToken(String email) {
+    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(String email) {
         return userRepo.findActiveUserByEmail(email)
                 .map(user -> {
                     CompletableFuture.runAsync(() -> {
@@ -294,53 +291,60 @@ public class AuthService {
                                 user, VerificationTokenType.PASSWORD_RESET);
                         emailService.sendMailAsync(user.getEmail(), VerificationTokenType.PASSWORD_RESET, UUIDToken);
                     });
-                    return responseBuilder.success("Password Reset Token has been successfully sent to your email");
+                    return ApiResponse.success("Password Reset Token has been successfully sent to your email");
                 })
-                .orElse(responseBuilder.error("User with the specified email does not exist or is not active"));
+                .orElse(ApiResponse.failure(ApiCode.INVALID_VERIFICATION_TOKEN, "User with the specified email does not exist or is not active"));
     }
+
 
     /**
      * Verifies the validity of a password reset token.
      *
-     * @param token The password reset token to be verified.
-     * @return A ResponseEntity containing a success message if the token is valid,
-     *         or an error message if the token is invalid or expired.
+     * @param token the password reset token to be validated.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} indicating
+     *         whether the token is valid or invalid/expired.
      */
-    public ResponseEntity<Map<String, String>> verifyPasswordResetToken(String token) {
+    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(String token) {
         boolean isValid = verificationTokenService.validateToken(token, VerificationTokenType.PASSWORD_RESET).isPresent();
 
         return isValid
-                ? responseBuilder.success("Your Password Reset Token has been successfully verified")
-                : responseBuilder.error("Invalid or expired verification token");
+                ? ApiResponse.success("Your Password Reset Token has been successfully verified")
+                : ApiResponse.failure(ApiCode.INVALID_VERIFICATION_TOKEN, "Invalid or expired verification token");
     }
 
+
     /**
-     * Changes the password of a user based on the provided reset token and new password details.
+     * Handles the process of changing a user's password using a verification token.
      *
-     * @param passwordResetDTO The data transfer object containing the reset token and the new password.
-     * @return A ResponseEntity containing a success or error message as a map.
+     * @param passwordResetDTO the data transfer object containing the token and new password.
+     * @return a ResponseEntity with an ApiResponse indicating success or failure of the operation.
      */
     @Transactional()
-    public ResponseEntity<Map<String, String>> changePassword(@Valid PasswordResetDTO passwordResetDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> changePassword(@Valid PasswordResetDTO passwordResetDTO) {
         return verificationTokenService.validateToken(passwordResetDTO.getToken(), VerificationTokenType.PASSWORD_RESET)
                 .map(token -> {
                     User user = token.getUser();
                     user.setPassword(passwordEncoder.encode(passwordResetDTO.getPassword()));
                     userRepo.save(user);
                     verificationTokenService.deleteTokenByUser(user);
-                    return responseBuilder.success("Your password has been successfully reset");
+                    return ApiResponse.success("Your password has been successfully reset");
                 })
-                .orElse(responseBuilder.error("Invalid or expired verification token"));
+                .orElse(ApiResponse.failure(ApiCode.INVALID_VERIFICATION_TOKEN, "Invalid or expired verification token"));
     }
 
+
     /**
-     * Generates a two-factor authentication (2FA) setup for the provided user.
-     * This includes generating a secret, recovery code, and a URI for QR code generation.
+     * Generates a 2-Factor Authentication (2FA) setup for the logged-in user.
+     * <p>
+     * The method creates a TOTP secret, encrypts it, and generates recovery codes
+     * for the user. It then stores the encrypted secret and recovery codes in the
+     * user's record and constructs a URI for the 2FA setup.
      *
      * @param loggedInUser The currently authenticated user for whom 2FA is being generated.
-     * @return ResponseEntity containing the 2FA setup details such as URI and recovery codes, or an error response in case of failure.
+     * @return A {@code ResponseEntity} containing a map with the generated 2FA URI and recovery codes
+     * on success, or an error message on failure.
      */
-    public ResponseEntity<?> generate2FA(UserPrincipal loggedInUser) {
+    public ResponseEntity<? extends ApiResponse<?>> generate2FA(UserPrincipal loggedInUser) {
         try {
             byte[] secretBytes = SecretGenerator.generate();
             String base32Secret = new Base32().encodeAsString(secretBytes);
@@ -361,31 +365,30 @@ public class AuthService {
 
             URI URI = generator.getURI("Zovo", loggedInUser.getUser().getEmail());
 
-            return ResponseEntity.ok(Map.of(
-                    "uri", URI.toString(),
-                    "recoveryCodes", recoveryCodes
-            ));
+            return ApiResponse.success("2FA QR code and recovery codes generated successfully",
+                    Map.of("uri", URI.toString(),
+                            "recoveryCodes", recoveryCodes));
         } catch (URISyntaxException e) {
-            return responseBuilder.error("Error occurred while generating 2FA URI");
+            return ApiResponse.failure(ApiCode.INTERNAL_SERVER_ERROR, "Error occurred while generating 2FA URI");
         }
     }
 
+
     /**
-     * Enables two-factor authentication (2FA) for the logged-in user if a valid 2FA code is provided.
+     * Enables Two-Factor Authentication (2FA) for the currently logged-in user.
+     * <p>
+     * Validates the provided 2FA code and updates the user's account settings accordingly.
+     * </p>
      *
-     * <p>This method verifies the provided 2FA code against the user's secret. If valid,
-     * 2FA is activated and persisted for the user.
-     *
-     * @param loggedInUser The currently authenticated user whose 2FA setting is to be updated.
-     * @param twoFaCodeDTO The DTO containing the 2FA code to verify.
-     * @return A {@code ResponseEntity<?>} containing a success message if 2FA is enabled,
-     *         or an error message if the code is invalid or 2FA cannot be activated.
+     * @param loggedInUser   The {@code UserPrincipal} representing the authenticated user.
+     * @param twoFaCodeDTO   The {@code TwoFaCodeDTO} containing the 2FA code to verify.
+     * @return A {@code ResponseEntity} with an {@code ApiResponse} indicating the success or failure of 2FA enablement.
      */
-    public ResponseEntity<?> enable2FA(UserPrincipal loggedInUser, TwoFaCodeDTO twoFaCodeDTO) {
+    public ResponseEntity<? extends ApiResponse<?>> enable2FA(UserPrincipal loggedInUser, TwoFaCodeDTO twoFaCodeDTO) {
         String encryptedSecret = loggedInUser.getUser().getTwoFactorSecret();
 
         if (encryptedSecret == null || encryptedSecret.isEmpty()) {
-            return responseBuilder.error("2FA is not enabled for this account.");
+            return ApiResponse.failure(ApiCode.TWO_FACTOR_AUTH_NOT_ENABLED, "2FA is not enabled for this account.");
         }
         String base32Secret = encryptionService.decrypt(encryptedSecret);
         TOTPGenerator generator = getTOTPGenerator(base32Secret);
@@ -396,27 +399,25 @@ public class AuthService {
             loggedInUser.getUser().setTwoFactorEnabled(true);
             userRepo.save(loggedInUser.getUser());
             log.info("2FA successfully enabled for user: {}", loggedInUser.getUser().getEmail());
-            return responseBuilder.success("2FA has been enabled successfully");
+            return ApiResponse.success("2FA has been enabled successfully");
         } else {
             log.warn("Failed 2FA activation attempt for user: {}", loggedInUser.getUser().getEmail());
-            return responseBuilder.error("Invalid 2FA code");
+            return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, "Invalid 2FA code");
         }
     }
 
+
     /**
-     * Disables Two-Factor Authentication (2FA) for the given user if it is currently enabled.
+     * Disables Two-Factor Authentication (2FA) for the logged-in user.
      *
-     * @param loggedInUser The authenticated user requesting to disable 2FA.
-     *                     Must be a valid {@link UserPrincipal} object.
-     * <p>
-     * @return A {@link ResponseEntity} containing success message if 2FA is disabled,
-     *         or an error message if 2FA was not enabled.
+     * @param loggedInUser the currently authenticated user's details.
+     * @return a ResponseEntity containing an ApiResponse indicating the success or failure of the operation.
      */
-    public ResponseEntity<?> disable2FA(UserPrincipal loggedInUser) {
+    public ResponseEntity<? extends ApiResponse<?>> disable2FA(UserPrincipal loggedInUser) {
         User user = loggedInUser.getUser();
 
         if (!user.isTwoFactorEnabled()) {
-            return responseBuilder.error("2FA is not currently enabled for this account");
+            return ApiResponse.failure(ApiCode.TWO_FACTOR_AUTH_NOT_ENABLED, "2FA is not currently enabled for this account");
         }
 
         user.setTwoFactorEnabled(false);
@@ -426,15 +427,16 @@ public class AuthService {
         userRepo.save(user);
 
         log.info("2FA disabled for user: {}", user.getEmail());
-        return responseBuilder.success("2FA has been disabled successfully");
+        return ApiResponse.success("2FA has been disabled successfully");
     }
 
+
     /**
-     * Saves a new user entity into the database with specified details and role.
+     * Saves a new user to the database with the provided details and role.
      *
      * @param requestDTO the data transfer object containing user registration details.
-     * @param userRole the role to be assigned to the new user.
-     * @return the newly saved User entity.
+     * @param userRole the role to assign to the user.
+     * @return the saved {@link User} entity.
      */
     private User saveNewUser(UserRegisterDTO requestDTO, Role userRole) {
         User user = userMapper.toUser(requestDTO);
@@ -443,11 +445,14 @@ public class AuthService {
         return userRepo.save(user);
     }
 
+
     /**
-     * Activates the given user by enabling and setting them as active,
-     * then persists the changes to the repository.
+     * Activates the given user by enabling their account and marking it as active.
+     * <p>
+     * The user entity is updated and persisted to the repository.
+     * A log entry is created to indicate the activation.
      *
-     * @param user the user to be activated
+     * @param user the user to be activated, must not be null
      */
     private void activateUser(User user) {
         user.setEnabled(true);
@@ -456,12 +461,13 @@ public class AuthService {
         log.info("User '{}' has been activated", user.getEmail());
     }
 
+
     /**
-     * Creates a new {@link SecurityContext}, sets the given {@link Authentication},
-     * and updates the {@link SecurityContextHolder}.
+     * Creates a new {@link SecurityContext}, sets the provided {@link Authentication}
+     * into it, and updates the {@link SecurityContextHolder} with this context.
      *
      * @param authentication the {@link Authentication} object to set in the security context
-     * @return the newly created and configured {@link SecurityContext}
+     * @return the created {@link SecurityContext} with the provided authentication
      */
     private SecurityContext createAndSetSecurityContext(Authentication authentication) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
@@ -470,13 +476,14 @@ public class AuthService {
         return context;
     }
 
+
     /**
-     * Creates a new HTTP session, invalidating the old session if it exists, and associates
-     * the provided SecurityContext with the new session.
+     * Creates a new HTTP session, invalidating the existing one if present,
+     * and associates it with the provided {@link SecurityContext}.
      *
-     * @param request the HttpServletRequest to get or create the session.
-     * @param context the SecurityContext to be stored in the new session.
-     * @return the newly created HttpSession with the SecurityContext attribute set.
+     * @param request the {@link HttpServletRequest} containing the current session
+     * @param context the {@link SecurityContext} to associate with the new session
+     * @return the newly created {@link HttpSession} instance
      */
     private HttpSession createNewSession(HttpServletRequest request, SecurityContext context) {
         HttpSession oldSession = request.getSession(false);
@@ -489,13 +496,16 @@ public class AuthService {
         return newSession;
     }
 
+
     /**
-     * Verifies the provided two-factor authentication (2FA) code, which can be either
-     * a recovery code or a time-based one-time password (TOTP).
+     * Verifies the provided 2FA code for the given user. It checks if the code is a valid recovery
+     * code or a time-based TOTP code.
      *
-     * @param user The user whose 2FA code needs to be verified.
-     * @param code The 2FA code provided for authentication.
-     * @return {@code true} if the 2FA code is valid; {@code false} otherwise.
+     * <p>This method consumes a recovery code if it is valid.
+     *
+     * @param user The user for whom the 2FA code is being verified.
+     * @param code The 2FA code to validate.
+     * @return <code>true</code> if the code is valid or matches a recovery code; <code>false</code> otherwise.
      */
     private boolean verify2FACode(User user, String code) {
         if (isValidRecoveryCode(user, code)) {
@@ -517,11 +527,12 @@ public class AuthService {
         return generator.verify(code);
     }
 
+
     /**
-     * Creates and returns a configured TOTPGenerator instance.
+     * Generates a TOTPGenerator configured with the provided secret key.
      *
-     * @param secret The secret key, encoded in Base32, used to generate the TOTP.
-     * @return A TOTPGenerator configured with the provided secret and settings.
+     * @param secret The base32-encoded secret key used for TOTP generation.
+     * @return A configured instance of TOTPGenerator.
      */
     private TOTPGenerator getTOTPGenerator(String secret) {
         byte[] secretBytes = new Base32().decode(secret);
@@ -534,13 +545,16 @@ public class AuthService {
                 .build();
     }
 
+
     /**
-     * Generates a list of unique recovery codes, each consisting of 8 characters.
+     * Generates a list of secure recovery codes, each consisting of 8 alphanumeric characters.
      * <p>
-     * The codes are URL-safe, randomly generated, and encoded in Base64. If the encoded length
-     * is less than 8 characters, random digits are appended to meet the required length.
+     * The method generates 10 unique recovery codes using random bytes, encodes them,
+     * and ensures their length is exactly 8 characters, appending digits if needed.
+     * <p>
+     * Useful for cases requiring secure, user-specific recovery tokens.
      *
-     * @return a list of 10 randomly generated recovery codes as Strings.
+     * @return a {@link List} of 10 unique recovery codes as {@link String}.
      */
     private List<String> generateRecoveryCodes() {
         List<String> recoveryCodes = new ArrayList<>();
@@ -568,11 +582,12 @@ public class AuthService {
         return recoveryCodes;
     }
 
+
     /**
-     * Encodes a list of recovery codes using BCrypt hashing and concatenates them into a single string.
+     * Encodes a list of recovery codes using BCrypt hashing.
      *
-     * @param recoveryCodes the list of recovery codes to encode
-     * @return a single string containing the hashed recovery codes, separated by commas
+     * @param recoveryCodes the list of plain recovery codes to be hashed
+     * @return a single comma-separated string of hashed recovery codes
      */
     private String encodeRecoveryCodes(List<String> recoveryCodes) { //TODO: understand this
         return recoveryCodes.stream()
@@ -580,12 +595,13 @@ public class AuthService {
                 .collect(Collectors.joining(","));
     }
 
+
     /**
-     * Validates the provided recovery code against the user's stored recovery codes.
+     * Validates if the given recovery code matches any stored hashed recovery codes for the user.
      *
      * @param user The user whose recovery codes are to be checked.
-     * @param code The recovery code to be validated.
-     * @return {@code true} if the code matches a stored recovery code, {@code false} otherwise.
+     * @param code The recovery code to validate.
+     * @return <code>true</code> if the recovery code is valid; <code>false</code> otherwise.
      */
     private boolean isValidRecoveryCode(User user, String code) { //TODO: understand this
         if (user.getTwoFactorRecoveryCodes() == null) {
@@ -596,12 +612,15 @@ public class AuthService {
                 .anyMatch(storedHash -> BCrypt.checkpw(code, storedHash));
     }
 
+
     /**
-     * Consumes a recovery code provided by the user by validating it and removing it
-     * from the user's stored two-factor recovery codes.
+     * Consumes a provided recovery code by removing it from the user's stored recovery codes.
+     * <p>
+     * If the provided code matches a stored hash, it is removed from the list.
+     * Remaining recovery codes are saved back to the user entity.
      *
-     * @param user the user attempting to consume a recovery code.
-     * @param code the recovery code entered by the user for validation.
+     * @param user The user whose recovery codes are to be processed.
+     * @param code The recovery code to be consumed.
      */
     private void consumeRecoveryCode(User user, String code) {
         List<String> remainingCodes = Arrays.stream(user.getTwoFactorRecoveryCodes().split(","))
