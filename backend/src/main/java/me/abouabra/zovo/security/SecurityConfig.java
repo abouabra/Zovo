@@ -40,7 +40,9 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @EnableWebSecurity
 public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**", "/favicon.ico"};
-    private static final String[] ADMIN_ENDPOINT_PREFIX = {"/api/v1/admin/**"};
+    private static final String[] TWO_FACTOR_AUTH_ENDPOINTS = {"/api/v1/auth/2fa/**"};
+    private static final String[] ADMIN_ACCESS_PATHS = {"/api/v1/admin/**"};
+    
     private final UserPrincipalService userPrincipalService;
     private final int bcryptStrength;
     private final SessionProperties sessionProperties;
@@ -76,8 +78,9 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(TWO_FACTOR_AUTH_ENDPOINTS).authenticated()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(ADMIN_ENDPOINT_PREFIX).hasRole("ADMIN")
+                        .requestMatchers(ADMIN_ACCESS_PATHS).hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
 

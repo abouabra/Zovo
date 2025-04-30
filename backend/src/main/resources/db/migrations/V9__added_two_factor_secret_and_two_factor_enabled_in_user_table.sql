@@ -1,0 +1,3 @@
+ALTER TABLE users
+ADD COLUMN two_fa_enabled BOOLEAN DEFAULT FALSE,
+ADD COLUMN two_fa_secret VARCHAR(255)

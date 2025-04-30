@@ -10,6 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -93,6 +94,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(RateLimitedException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitedException(RateLimitedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("RATE_LIMITED", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    
+
 
 
 
@@ -105,7 +114,11 @@ public class GlobalExceptionHandler {
 
 
     // all the below are just general fallbacks
-
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("METHOD_NOT_SUPPORTED", "HTTP request method not supported.", List.of(ex.getMessage()));
+        return new ResponseEntity<>(errorResponse, HttpStatus.METHOD_NOT_ALLOWED);
+    }
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
         ErrorResponse errorResponse = new ErrorResponse("BAD_CREDENTIALS", ex.getMessage());

@@ -4,30 +4,25 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import me.abouabra.zovo.dtos.PasswordResetDTO;
-import me.abouabra.zovo.dtos.UserLoginDTO;
-import me.abouabra.zovo.dtos.UserRegisterDTO;
-import me.abouabra.zovo.dtos.UserResponseDTO;
+import me.abouabra.zovo.dtos.*;
+import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 
+
 /**
- * The AuthController class handles authentication-related operations such as user registration, login, logout,
- * email confirmation, and password reset. It exposes RESTful endpoints for clients to interact with the authentication services.
+ * The {@code AuthController} class provides REST API endpoints for handling
+ * various authentication and authorization functionalities, such as user
+ * registration, login, logout, email confirmation, password reset, and
+ * two-factor authentication (2FA).
  * <p>
- * Endpoints:
- * <ul>
- *     <li>/api/v1/auth/register - User registration</li>
- *     <li>/api/v1/auth/login - User login</li>
- *     <li>/api/v1/auth/logout - User logout</li>
- *     <li>/api/v1/auth/confirm-email - Email confirmation</li>
- *     <li>/api/v1/auth/send-password-reset - Password reset token request</li>
- *     <li>/api/v1/auth/password-reset - Password reset and token verification</li>
- * </ul>
+ * It interacts with {@code AuthService} to perform these operations and returns
+ * appropriate HTTP responses.
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -55,27 +50,33 @@ public class AuthController {
      * @return a {@code ResponseEntity} containing a {@code UserResponseDTO} with the authenticated user's details such as ID, username, and email.
      */
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
-        UserResponseDTO responseDTO = authService.login(loginDTO, request, response);
-        return ResponseEntity.ok(responseDTO);
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
+        return authService.login(loginDTO, request, response);
+    }
+
+    @PostMapping("/login-2fa")
+    public ResponseEntity<?> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
+        return authService.loginWith2FA(tokenAndCodeDTO, request, response);
     }
 
 
-    /**
-     * Logs out the currently authenticated user by invalidating their session
-     * and clearing associated authentication details.
-     * <p>
-     * This endpoint performs the following actions:
-     * <ul>
-     *   <li>Invalidates the user's HTTP session if it exists.</li>
-     *   <li>Clears the authentication context to remove authentication details.</li>
-     *   <li>Removes any session-related cookies such as {@code JSESSIONID}.</li>
-     *   <li>Ensures the user's session is securely terminated.</li>
-     * </ul>
-     *
-     * @param request  the {@code HttpServletRequest} object, providing access to session data for the current user.
-     * @param response the {@code HttpServletResponse} object, used to modify response headers or cookies as needed.
-     */
+
+
+        /**
+         * Logs out the currently authenticated user by invalidating their session
+         * and clearing associated authentication details.
+         * <p>
+         * This endpoint performs the following actions:
+         * <ul>
+         *   <li>Invalidates the user's HTTP session if it exists.</li>
+         *   <li>Clears the authentication context to remove authentication details.</li>
+         *   <li>Removes any session-related cookies such as {@code JSESSIONID}.</li>
+         *   <li>Ensures the user's session is securely terminated.</li>
+         * </ul>
+         *
+         * @param request  the {@code HttpServletRequest} object, providing access to session data for the current user.
+         * @param response the {@code HttpServletResponse} object, used to modify response headers or cookies as needed.
+         */
     @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         authService.logout(request, response);
@@ -131,4 +132,38 @@ public class AuthController {
        return authService.changePassword(passwordResetDTO);
     }
 
+    /**
+     * Generates a 2FA QR code and secret for the logged-in user.
+     *
+     * @param loggedInUser the authenticated user for whom 2FA is being generated.
+     * @return a {@code ResponseEntity} containing the details required for 2FA setup.
+     */
+    @GetMapping("/2fa/generate")
+    public ResponseEntity<?> generate2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return authService.generate2FA(loggedInUser);
+    }
+
+    /**
+     * Enables two-factor authentication (2FA) for the logged-in user using the provided 2FA code.
+     *
+     * @param loggedInUser the currently authenticated user.
+     * @param twoFaCodeDTO the {@code TwoFaCodeDTO} containing the 2FA code for verification.
+     * @return a {@code ResponseEntity} representing the result of the operation.
+     */
+    @PostMapping("/2fa/enable")
+    public ResponseEntity<?> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
+        return authService.enable2FA(loggedInUser, twoFaCodeDTO);
+    }
+
+
+    /**
+     * Disables two-factor authentication (2FA) for the currently authenticated user.
+     *
+     * @param loggedInUser the currently authenticated user represented by {@code UserPrincipal}.
+     * @return a {@code ResponseEntity} containing the result of the 2FA disable operation.
+     */
+    @DeleteMapping("/2fa/disable")
+    public ResponseEntity<?> disable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return authService.disable2FA(loggedInUser);
+    }
 }

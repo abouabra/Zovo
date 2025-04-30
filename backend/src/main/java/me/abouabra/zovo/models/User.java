@@ -10,22 +10,23 @@ import java.util.Set;
 
 
 
+
 /**
- * <p>The <code>User</code> class represents a system user entity.</p>
+ * <p>The <code>User</code> class represents the user entity within the system.</p>
  *
- * <p>This class is a JPA entity mapped to the "users" table with fields for
- * storing key user details such as username, email, and password. It also includes
- * user roles, status, and timestamp information.</p>
+ * <p>This entity is mapped to the "users" table in the database and contains fields
+ * such as username, email, password, roles, and account status attributes.</p>
  *
  * <ul>
- *   <li>Supports unique constraints on username and email.</li>
- *   <li>Links to roles using a Many-to-Many relationship.</li>
- *   <li>Manages user activity & enablement status.</li>
+ *   <li>Each user has a unique identifier (<code>id</code>), username, and email.</li>
+ *   <li>Password is securely managed and ignored in JSON serialization.</li>
+ *   <li>Relationships with roles are defined using a many-to-many association.</li>
  * </ul>
  */
 @Entity
 @Getter
 @Setter
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users", uniqueConstraints = {
@@ -63,4 +64,13 @@ public class User {
 
     @Column(nullable = false, name = "\"isEnabled\"")
     private boolean isEnabled = false;
+
+    @Column(nullable = false, name = "two_fa_enabled")
+    private boolean twoFactorEnabled;
+
+    @Column(name = "two_fa_secret")
+    private String twoFactorSecret;
+
+    @Column(name = "two_fa_recovery_codes")
+    private String twoFactorRecoveryCodes;
 }

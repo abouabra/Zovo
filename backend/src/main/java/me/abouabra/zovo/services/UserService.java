@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class UserService {
     private final AuthenticationManager authManager;
 
 
+    @Transactional
     public List<UserResponseDTO> getAllUsers() {
         return userRepo
                 .findAll()

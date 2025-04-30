@@ -1,7 +1,10 @@
 #  Configuration For Development Profile
 # App Configuration
 app:
-  base-url: "http://localhost:8080"
+  port: 8080
+  base-url: "http://localhost:${app.port}"
+  encryption:
+    secret: ${TWO_FA_SECRET_KEY}
 
 # Security Configuration
 security:
@@ -10,7 +13,7 @@ security:
 
 # Server Configuration
 server:
-  port: 8080
+  port: ${app.port}
   servlet:
     session:
       timeout: 7d
