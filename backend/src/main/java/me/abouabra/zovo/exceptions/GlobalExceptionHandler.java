@@ -37,12 +37,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleUserNotFoundException(UserNotFoundException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleUserNotFound(UserNotFoundException ex) {
         return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.USER_NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(RoleNotFoundException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleRoleNotFoundException() {
+    public ResponseEntity<? extends ApiResponse<?>> handleRoleNotFound() {
         return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.ROLE_NOT_FOUND, "No role found with this name.");
     }
 
@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(InternalAuthenticationServiceException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleInternalAuthenticationServiceException(InternalAuthenticationServiceException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleInternalAuthenticationService(InternalAuthenticationServiceException ex) {
         // Check if the cause is UsernameNotFoundException
         if (ex.getCause() instanceof UsernameNotFoundException)
             return ApiResponse.failure(HttpStatus.NOT_FOUND, ApiCode.USER_NOT_FOUND, "No user found with this email.");
@@ -67,14 +67,22 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleDisabledException() {
+    public ResponseEntity<? extends ApiResponse<?>> handleDisabled() {
         return ApiResponse.failure(ApiCode.ACCOUNT_DISABLED, "Your account is not activated. Please check your email for activation instructions.");
     }
 
     @ExceptionHandler(RateLimitedException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleRateLimitedException(RateLimitedException ex) {
+    public ResponseEntity<? extends ApiResponse<?>> handleRateLimited(RateLimitedException ex) {
         return ApiResponse.failure(ApiCode.RATE_LIMITED, ex.getMessage());
     }
+
+    @ExceptionHandler(TwoFactorAuthAlreadyEnabledException.class)
+    public ResponseEntity<? extends ApiResponse<?>> handleTwoFactorAuthAlreadyEnabled(TwoFactorAuthAlreadyEnabledException ex) {
+        return ApiResponse.failure(ApiCode.TWO_FACTOR_ALREADY_ENABLED, ex.getMessage());
+    }
+
+
+
 
 
     // all the below are just general fallbacks

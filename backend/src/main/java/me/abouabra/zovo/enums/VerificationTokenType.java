@@ -21,7 +21,9 @@ import java.util.Map;
 public enum VerificationTokenType {
     CONFIRM_EMAIL("email/confirm-email"),
     PASSWORD_RESET("email/password-reset"),
-    WELCOME_EMAIL("email/welcome-email");
+    WELCOME_EMAIL("email/welcome"),
+    TWO_FACTOR_AUTH_ENABLED("email/two-fa-status"),
+    TWO_FACTOR_AUTH_DISABLED("email/two-fa-status");
 
     private final String templateName;
 
@@ -67,6 +69,21 @@ public enum VerificationTokenType {
                 endpointURL = baseURL + "/api/v1/auth/login";
                 variables.put("loginURL", endpointURL);
                 break;
+            case TWO_FACTOR_AUTH_ENABLED:
+                subject = "2FA Has Been Activated";
+                endpointURL = baseURL + "/api/v1/auth/login";
+                variables.put("loginURL", endpointURL);
+                variables.put("title", "2FA Has Been Activated.");
+                variables.put("description", "Two-factor authentication has been enabled for your account. This adds an extra layer of security by requiring both your password and a verification code when logging in.");
+                break;
+            case TWO_FACTOR_AUTH_DISABLED:
+                subject = "2FA Has Been Disabled";
+                endpointURL = baseURL + "/api/v1/auth/login";
+                variables.put("loginURL", endpointURL);
+                variables.put("title", "2FA Has Been Disabled.");
+                variables.put("description", "Two-factor authentication has been disabled for your account. You will now log in using only your password.");
+                break;
+
             default:
                 throw new IllegalArgumentException("Unexpected VerificationTokenType: " + this);
         }

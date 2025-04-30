@@ -16,6 +16,7 @@ import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.enums.VerificationTokenType;
 import me.abouabra.zovo.exceptions.RateLimitedException;
 import me.abouabra.zovo.exceptions.RoleNotFoundException;
+import me.abouabra.zovo.exceptions.TwoFactorAuthAlreadyEnabledException;
 import me.abouabra.zovo.exceptions.UserAlreadyExistsException;
 import me.abouabra.zovo.mappers.UserMapper;
 import me.abouabra.zovo.models.Role;
@@ -346,6 +347,11 @@ public class AuthService {
      */
     public ResponseEntity<? extends ApiResponse<?>> generate2FA(UserPrincipal loggedInUser) {
         try {
+            User user = loggedInUser.getUser();
+
+            if(user.isTwoFactorEnabled())
+                throw new TwoFactorAuthAlreadyEnabledException("2FA is already enabled for this account");
+
             byte[] secretBytes = SecretGenerator.generate();
             String base32Secret = new Base32().encodeAsString(secretBytes);
 
@@ -357,13 +363,13 @@ public class AuthService {
             String encodedRecoveryCodes = encodeRecoveryCodes(recoveryCodes);
 
 
-            loggedInUser.getUser().setTwoFactorSecret(encryptedSecret);
-            loggedInUser.getUser().setTwoFactorRecoveryCodes(encodedRecoveryCodes);
-            userRepo.save(loggedInUser.getUser());
+            user.setTwoFactorSecret(encryptedSecret);
+            user.setTwoFactorRecoveryCodes(encodedRecoveryCodes);
+            userRepo.save(user);
 
             TOTPGenerator generator = getTOTPGenerator(base32Secret);
 
-            URI URI = generator.getURI("Zovo", loggedInUser.getUser().getEmail());
+            URI URI = generator.getURI("Zovo", user.getEmail());
 
             return ApiResponse.success("2FA QR code and recovery codes generated successfully",
                     Map.of("uri", URI.toString(),
@@ -385,7 +391,12 @@ public class AuthService {
      * @return A {@code ResponseEntity} with an {@code ApiResponse} indicating the success or failure of 2FA enablement.
      */
     public ResponseEntity<? extends ApiResponse<?>> enable2FA(UserPrincipal loggedInUser, TwoFaCodeDTO twoFaCodeDTO) {
-        String encryptedSecret = loggedInUser.getUser().getTwoFactorSecret();
+        User user = loggedInUser.getUser();
+
+        if(user.isTwoFactorEnabled())
+            throw new TwoFactorAuthAlreadyEnabledException("2FA is already enabled for this account");
+
+        String encryptedSecret = user.getTwoFactorSecret();
 
         if (encryptedSecret == null || encryptedSecret.isEmpty()) {
             return ApiResponse.failure(ApiCode.TWO_FACTOR_AUTH_NOT_ENABLED, "2FA is not enabled for this account.");
@@ -396,12 +407,17 @@ public class AuthService {
         boolean isValid = generator.verify(twoFaCodeDTO.getCode());
 
         if (isValid) {
-            loggedInUser.getUser().setTwoFactorEnabled(true);
-            userRepo.save(loggedInUser.getUser());
-            log.info("2FA successfully enabled for user: {}", loggedInUser.getUser().getEmail());
+            user.setTwoFactorEnabled(true);
+            userRepo.save(user);
+
+            CompletableFuture.runAsync(() ->
+                    emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_ENABLED, null)
+            );
+
+            log.info("2FA successfully enabled for user: {}", user.getEmail());
             return ApiResponse.success("2FA has been enabled successfully");
         } else {
-            log.warn("Failed 2FA activation attempt for user: {}", loggedInUser.getUser().getEmail());
+            log.warn("Failed 2FA activation attempt for user: {}", user.getEmail());
             return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, "Invalid 2FA code");
         }
     }
@@ -425,6 +441,10 @@ public class AuthService {
         user.setTwoFactorRecoveryCodes(null);
 
         userRepo.save(user);
+
+        CompletableFuture.runAsync(() ->
+                emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_DISABLED, null)
+        );
 
         log.info("2FA disabled for user: {}", user.getEmail());
         return ApiResponse.success("2FA has been disabled successfully");
