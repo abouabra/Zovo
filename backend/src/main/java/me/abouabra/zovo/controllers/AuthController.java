@@ -5,8 +5,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
+import me.abouabra.zovo.enums.RateLimitingAction;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
+import me.abouabra.zovo.services.RedisRateLimitingService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,41 +19,46 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class AuthController {
     private AuthService authService;
+    private RedisRateLimitingService redisRateLimitingService;
 
-    
     /**
      * Handles user registration by processing the provided registration details.
      *
      * @param registerDTO the user registration details, including username, email,
      *                    password, and password confirmation, must be valid.
      * @return a {@link ResponseEntity} containing an {@link ApiResponse} object with
-     *         success status and relevant data or error message.
+     * success status and relevant data or error message.
      */
     @PostMapping("/register")
     public ResponseEntity<? extends ApiResponse<?>> register(@Valid @RequestBody UserRegisterDTO registerDTO) {
         return authService.register(registerDTO);
     }
 
-    
+
     /**
-     * Authenticates a user using the provided login credentials.
+     * Handles user login by validating credentials and managing rate limits.
      *
-     * @param loginDTO the user's login details including email and password.
-     * @param request the HTTP request object.
+     * @param loginDTO the login details, including email and password, must be valid.
+     * @param request  the HTTP request object.
      * @param response the HTTP response object.
-     * @return a response entity containing an {@code ApiResponse} indicating the success or failure of the login operation.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} indicating
+     * the success or failure of the login operation.
      */
     @PostMapping("/login")
     public ResponseEntity<? extends ApiResponse<?>> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
-        return authService.login(loginDTO, request, response);
+        return redisRateLimitingService.wrap(
+                loginDTO.getEmail(),
+                RateLimitingAction.LOGIN,
+                () -> authService.login(loginDTO, request, response)
+        );
     }
 
     /**
      * Processes two-factor authentication (2FA) login request.
      *
      * @param tokenAndCodeDTO the DTO containing the temporary token and 2FA code.
-     * @param request the HTTP request object.
-     * @param response the HTTP response object.
+     * @param request         the HTTP request object.
+     * @param response        the HTTP response object.
      * @return a {@code ResponseEntity} containing an {@code ApiResponse} with the login result.
      */
     @PostMapping("/login-2fa")
@@ -59,7 +66,7 @@ public class AuthController {
         return authService.loginWith2FA(tokenAndCodeDTO, request, response);
     }
 
-    
+
     /**
      * Logs out the currently authenticated user by invalidating their session
      * and clearing the security context.
@@ -72,7 +79,7 @@ public class AuthController {
         return authService.logout(request, response);
     }
 
-    
+
     /**
      * Confirms a user's email using a provided verification token.
      *
@@ -84,7 +91,7 @@ public class AuthController {
         return authService.confirmEmail(token);
     }
 
-    
+
     /**
      * Sends a password-reset verification token to the specified email address.
      * <p>
@@ -98,20 +105,20 @@ public class AuthController {
         return authService.sendVerifyPasswordResetToken(email);
     }
 
-    
+
     /**
      * Verifies the validity of a password reset token.
      *
      * @param token the password reset token to be validated.
      * @return a {@link ResponseEntity} containing an {@link ApiResponse} with
-     *         the validation result, indicating success or failure.
+     * the validation result, indicating success or failure.
      */
     @GetMapping("/password-reset")
     public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestParam("token") String token) {
         return authService.verifyPasswordResetToken(token);
     }
 
-    
+
     /**
      * Processes a password reset request by validating the provided token and updating the password.
      *
@@ -121,10 +128,10 @@ public class AuthController {
      */
     @PostMapping("/password-reset")
     public ResponseEntity<? extends ApiResponse<?>> changePassword(@Valid @RequestBody PasswordResetDTO passwordResetDTO) {
-       return authService.changePassword(passwordResetDTO);
+        return authService.changePassword(passwordResetDTO);
     }
 
-    
+
     /**
      * Generates a Two-Factor Authentication (2FA) QR code for the authenticated user.
      *
@@ -136,14 +143,14 @@ public class AuthController {
         return authService.generate2FA(loggedInUser);
     }
 
-    
+
     /**
      * Enables Two-Factor Authentication (2FA) for the logged-in user.
      *
      * @param loggedInUser The current authenticated user.
      * @param twoFaCodeDTO The DTO containing the 2FA code to verify.
      * @return A {@code ResponseEntity} wrapping {@code ApiResponse} indicating
-     *         the success or failure of enabling 2FA.
+     * the success or failure of enabling 2FA.
      */
     @PostMapping("/2fa/enable")
     public ResponseEntity<? extends ApiResponse<?>> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
@@ -151,7 +158,6 @@ public class AuthController {
     }
 
 
-    
     /**
      * Disables Two-Factor Authentication (2FA) for the currently authenticated user.
      *

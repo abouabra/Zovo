@@ -14,8 +14,8 @@ import me.abouabra.zovo.configs.SessionProperties;
 import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.enums.VerificationTokenType;
-import me.abouabra.zovo.exceptions.RateLimitedException;
 import me.abouabra.zovo.exceptions.RoleNotFoundException;
+import me.abouabra.zovo.exceptions.TooManyRequestsException;
 import me.abouabra.zovo.exceptions.TwoFactorAuthAlreadyEnabledException;
 import me.abouabra.zovo.exceptions.UserAlreadyExistsException;
 import me.abouabra.zovo.mappers.UserMapper;
@@ -71,7 +71,7 @@ public class AuthService {
     private final SessionProperties sessionProperties;
     private final EmailService emailService;
     private final VerificationTokenService verificationTokenService;
-    private final RateLimitingService rateLimitingService;
+    private final RedisRateLimitingService rateLimitingService;
     private final SecretEncryptionService encryptionService;
 
     // TODO: Replace those maps with redis later
@@ -89,7 +89,7 @@ public class AuthService {
      * @param requestDTO the user registration details including username, email, and password.
      * @return a {@link ResponseEntity} containing a success message upon successful registration.
      * @throws UserAlreadyExistsException if the username or email is already in use.
-     * @throws RoleNotFoundException if the default role is not found in the database.
+     * @throws RoleNotFoundException      if the default role is not found in the database.
      */
     public ResponseEntity<? extends ApiResponse<?>> register(@Valid UserRegisterDTO requestDTO) {
         if (userRepo.existsByUsernameOrEmail(requestDTO.getUsername(), requestDTO.getEmail())) {
@@ -119,22 +119,22 @@ public class AuthService {
      * Handles user login by authenticating the provided credentials, handling rate limiting,
      * and verifying if two-factor authentication (2FA) is required.
      *
-     * @param loginDTO       Object containing user's login credentials.
-     * @param request        HttpServletRequest object to manage session and request details.
-     * @param response       HttpServletResponse object to add cookies or modify response details.
+     * @param loginDTO Object containing user's login credentials.
+     * @param request  HttpServletRequest object to manage session and request details.
+     * @param response HttpServletResponse object to add cookies or modify response details.
      * @return ResponseEntity containing the login result, which can include user details or
-     *         a 2FA requirement status if enabled.
+     * a 2FA requirement status if enabled.
      */
     @Transactional
     public ResponseEntity<? extends ApiResponse<?>> login(UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
         try {
-            if (rateLimitingService.isRateLimited(loginDTO.getEmail(), "login")) {
-                long timeRemaining = rateLimitingService.getLockoutDurationRemaining(
-                        loginDTO.getEmail(), "login");
-
-                String message = String.format("Too many failed attempts. Try again in %d minutes.", (timeRemaining / 60));
-                throw new RateLimitedException(message);
-            }
+//            if (rateLimitingService.isRateLimited(loginDTO.getEmail(), "login")) {
+//                long timeRemaining = rateLimitingService.getLockoutDurationRemaining(
+//                        loginDTO.getEmail(), "login");
+//
+//                String message = String.format("Too many failed attempts. Try again in %d minutes.", (timeRemaining / 60));
+//                throw new TooManyRequestsException(message);
+//            }
 
             Authentication authentication = authManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
@@ -149,8 +149,8 @@ public class AuthService {
                 log.info("2FA is enabled for user: {}", user.getEmail());
 
                 return ApiResponse.success("Please enter your 2FA code to complete login",
-                                            ApiCode.LOGIN_NEEDS_2FA,
-                                            Map.of("token", token)
+                        ApiCode.LOGIN_NEEDS_2FA,
+                        Map.of("token", token)
                 );
             }
 
@@ -158,7 +158,7 @@ public class AuthService {
 
             HttpSession newSession = createNewSession(request, context);
 
-            rateLimitingService.resetAttempts(loginDTO.getEmail(), "login");
+//            rateLimitingService.resetAttempts(loginDTO.getEmail(), "login");
 
             response.addCookie(sessionProperties.createSessionCookie(newSession));
 
@@ -166,7 +166,7 @@ public class AuthService {
 
             return ApiResponse.success("Logged in successfully", responseDTO);
         } catch (BadCredentialsException e) {
-            rateLimitingService.recordFailedAttempt(loginDTO.getEmail(), "login");
+//            rateLimitingService.recordFailedAttempt(loginDTO.getEmail(), "login");
             throw new BadCredentialsException(e.getMessage());
         }
     }
@@ -178,8 +178,8 @@ public class AuthService {
      * and enforces rate limits for failed attempts to ensure security.</p>
      *
      * @param tokenAndCodeDTO the DTO containing the temporary token and the 2FA code.
-     * @param request the {@code HttpServletRequest} used for managing session information.
-     * @param response the {@code HttpServletResponse} used for adding session-related cookies.
+     * @param request         the {@code HttpServletRequest} used for managing session information.
+     * @param response        the {@code HttpServletResponse} used for adding session-related cookies.
      * @return a {@code ResponseEntity} containing an {@code ApiResponse}, either success with user data
      * or failure with error details.
      */
@@ -195,7 +195,7 @@ public class AuthService {
             long timeRemaining = rateLimitingService.getLockoutDurationRemaining(email, "login");
 
             String message = String.format("Too many failed attempts. Try again in %d minutes.", (timeRemaining / 60));
-            throw new RateLimitedException(message);
+            throw new TooManyRequestsException(message);
         }
 
         User user = userRepo.findUserByEmail(email)
@@ -263,7 +263,7 @@ public class AuthService {
      *
      * @param token the verification token to validate for email confirmation
      * @return a ResponseEntity containing the result of the email confirmation
-     *         as a success or failure response
+     * as a success or failure response
      */
     @Transactional()
     public ResponseEntity<? extends ApiResponse<?>> confirmEmail(String token) {
@@ -303,7 +303,7 @@ public class AuthService {
      *
      * @param token the password reset token to be validated.
      * @return a {@link ResponseEntity} containing an {@link ApiResponse} indicating
-     *         whether the token is valid or invalid/expired.
+     * whether the token is valid or invalid/expired.
      */
     public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(String token) {
         boolean isValid = verificationTokenService.validateToken(token, VerificationTokenType.PASSWORD_RESET).isPresent();
@@ -349,7 +349,7 @@ public class AuthService {
         try {
             User user = loggedInUser.getUser();
 
-            if(user.isTwoFactorEnabled())
+            if (user.isTwoFactorEnabled())
                 throw new TwoFactorAuthAlreadyEnabledException("2FA is already enabled for this account");
 
             byte[] secretBytes = SecretGenerator.generate();
@@ -386,14 +386,14 @@ public class AuthService {
      * Validates the provided 2FA code and updates the user's account settings accordingly.
      * </p>
      *
-     * @param loggedInUser   The {@code UserPrincipal} representing the authenticated user.
-     * @param twoFaCodeDTO   The {@code TwoFaCodeDTO} containing the 2FA code to verify.
+     * @param loggedInUser The {@code UserPrincipal} representing the authenticated user.
+     * @param twoFaCodeDTO The {@code TwoFaCodeDTO} containing the 2FA code to verify.
      * @return A {@code ResponseEntity} with an {@code ApiResponse} indicating the success or failure of 2FA enablement.
      */
     public ResponseEntity<? extends ApiResponse<?>> enable2FA(UserPrincipal loggedInUser, TwoFaCodeDTO twoFaCodeDTO) {
         User user = loggedInUser.getUser();
 
-        if(user.isTwoFactorEnabled())
+        if (user.isTwoFactorEnabled())
             throw new TwoFactorAuthAlreadyEnabledException("2FA is already enabled for this account");
 
         String encryptedSecret = user.getTwoFactorSecret();
@@ -455,7 +455,7 @@ public class AuthService {
      * Saves a new user to the database with the provided details and role.
      *
      * @param requestDTO the data transfer object containing user registration details.
-     * @param userRole the role to assign to the user.
+     * @param userRole   the role to assign to the user.
      * @return the saved {@link User} entity.
      */
     private User saveNewUser(UserRegisterDTO requestDTO, Role userRole) {

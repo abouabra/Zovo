@@ -71,8 +71,8 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(ApiCode.ACCOUNT_DISABLED, "Your account is not activated. Please check your email for activation instructions.");
     }
 
-    @ExceptionHandler(RateLimitedException.class)
-    public ResponseEntity<? extends ApiResponse<?>> handleRateLimited(RateLimitedException ex) {
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<? extends ApiResponse<?>> handleRateLimited(TooManyRequestsException ex) {
         return ApiResponse.failure(ApiCode.RATE_LIMITED, ex.getMessage());
     }
 

@@ -106,8 +106,7 @@ spring:
     redis:
       namespace: spring:session  # Optional prefix for session keys
       flush-mode: on-save        # Optional, when to flush to Redis
-#      repository-type:flu indexed   # Optional, for indexed repository support
-#
+
   cache:
     type: redis
 
