@@ -5,6 +5,7 @@ all: build
 
 
 build:
+	@mkdir -p $(CURDIR)/volumes/postgres $(CURDIR)/volumes/redis
 	@docker compose -f docker-compose.yml up -d --build
 
 start:
@@ -19,6 +20,7 @@ clean:
 fclean:
 	@docker compose -f docker-compose.yml down -v
 	@docker system prune -af
+	@rm -rf $(CURDIR)/volumes/
 
 re: clean build
 restart: stop start

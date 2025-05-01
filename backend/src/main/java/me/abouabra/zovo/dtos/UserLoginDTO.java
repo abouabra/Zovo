@@ -4,7 +4,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import me.abouabra.zovo.validators.ValidPassword;
+
+import java.io.Serializable;
 
 /**
  * Data Transfer Object (DTO) for handling user login information.
@@ -21,8 +24,9 @@ import me.abouabra.zovo.validators.ValidPassword;
  *   lowercase letters, and numbers.
  */
 @AllArgsConstructor
+@NoArgsConstructor
 @Data
-public class UserLoginDTO {
+public class UserLoginDTO implements Serializable {
 
     @NotBlank(message = "Email cannot be blank")
     @Email(message = "Invalid email format")

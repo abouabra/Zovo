@@ -76,7 +76,7 @@ public class AuthService {
 
     // TODO: Replace those maps with redis later
     private final Map<String, Role> roleCache = new ConcurrentHashMap<>();
-    private final Map<String, String> twoFactorSessions = new HashMap<>();
+    private final Map<String, String> twoFactorSessions = new ConcurrentHashMap<>();
 
     /**
      * Registers a new user and sends a verification email.

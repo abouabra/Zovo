@@ -8,6 +8,8 @@ import me.abouabra.zovo.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.io.Serializable;
+
 
 /**
  * <p>The <code>UserMapper</code> interface defines mapping functionality between
@@ -23,7 +25,7 @@ import org.mapstruct.Mapping;
  * <p>Designed for use in Spring-based applications.</p>
  */
 @Mapper(componentModel = "spring", uses = {RoleMapper.class})
-public interface UserMapper {
+public interface UserMapper extends Serializable {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "roles", ignore = true)

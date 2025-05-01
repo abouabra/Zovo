@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import me.abouabra.zovo.enums.VerificationTokenType;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 
 @AllArgsConstructor
@@ -15,7 +16,8 @@ import java.time.ZonedDateTime;
 @Table(name = "verification_tokens", uniqueConstraints = {
         @UniqueConstraint(columnNames = "token"),
 })
-public class VerificationToken {
+public class VerificationToken implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

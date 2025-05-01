@@ -12,6 +12,8 @@ import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,21 +32,25 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
+    private final CacheManager cacheManager;
 
     @Transactional
-    public ResponseEntity<? extends ApiResponse<?>> getAllUsers() {
-        List<UserResponseDTO> dtoList = userRepo
+    @Cacheable("usersCache")
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepo
                 .findAll()
                 .stream()
                 .map(userMapper::toDTO)
                 .toList();
-        return ApiResponse.success(dtoList);
     }
 
-    public ResponseEntity<? extends ApiResponse<?>> getUserById(int userId) {
+    @Transactional
+    @Cacheable(value = "userCache", key = "#userId")
+    public UserResponseDTO getUserById(int userId) {
+
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with id '%d' was not found".formatted(userId)));
-        return ApiResponse.success(userMapper.toDTO(user));
+        return userMapper.toDTO(user);
     }
 
     public ResponseEntity<? extends ApiResponse<?>> getLoggedInUserData(UserPrincipal loggedInUser) {

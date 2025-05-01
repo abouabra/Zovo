@@ -5,6 +5,8 @@ import lombok.Getter;
 import me.abouabra.zovo.models.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serializable;
 import java.util.Collection;
 
 
@@ -21,7 +23,7 @@ import java.util.Collection;
  */
 @AllArgsConstructor
 @Getter
-public class UserPrincipal implements UserDetails {
+public class UserPrincipal implements UserDetails, Serializable {
 
     private final User user;
 

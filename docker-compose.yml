@@ -1,7 +1,6 @@
-
 services:
   postgres:
-    image: postgres:17.4 # 17.4-alpine
+    image: postgres:17.4
     container_name: postgres_container
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -11,13 +10,40 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     networks:
-      - postgres_network
+      - backend_network
+    restart: always
+
+  redis:
+    image: redis:7.4.3
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    networks:
+      - backend_network
+    volumes:
+      - redis-data:/data
+      - ./infrastructure/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    restart: always
+
 
 volumes:
   postgres_data:
     driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/postgres
+      o: bind
+
+  redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/redis
+      o: bind
 
 networks:
-  postgres_network:
+  backend_network:
     driver: bridge

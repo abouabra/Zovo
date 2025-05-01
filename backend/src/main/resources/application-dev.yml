@@ -16,19 +16,21 @@ server:
   port: ${app.port}
   servlet:
     session:
-      timeout: 7d
+      timeout: 604800
       cookie:
-        name: BLABLAID
+        name: XSESSIONID
         domain: localhost
         path: /
         max-age: 604800 # 7 days
         secure: false
         http-only: true
         same-site: strict
-
+      tracking-modes: cookie
 
 # Application Configuration
 spring:
+  main:
+    allow-bean-definition-overriding: true
   application:
     name: Zovo
 
@@ -66,6 +68,7 @@ spring:
   flyway:
     locations: classpath:db/migrations
     enabled: true
+    baseline-on-migrate: true
 
   # Output Configuration
   output:
@@ -86,6 +89,28 @@ spring:
           auth: true
           starttls:
             enable: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: yourStrongPassword
+      timeout: 60000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  session:
+    redis:
+      namespace: spring:session  # Optional prefix for session keys
+      flush-mode: on-save        # Optional, when to flush to Redis
+#      repository-type:flu indexed   # Optional, for indexed repository support
+#
+  cache:
+    type: redis
+
 
   # OAuth2 Configuration
   security:

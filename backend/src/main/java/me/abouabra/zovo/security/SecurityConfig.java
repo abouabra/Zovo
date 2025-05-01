@@ -1,6 +1,5 @@
 package me.abouabra.zovo.security;
 
-import me.abouabra.zovo.configs.SessionProperties;
 import me.abouabra.zovo.services.UserPrincipalService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,9 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.context.*;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 
 /**
@@ -42,22 +40,14 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**", "/favicon.ico"};
     private static final String[] TWO_FACTOR_AUTH_ENDPOINTS = {"/api/v1/auth/2fa/**"};
     private static final String[] ADMIN_ACCESS_PATHS = {"/api/v1/admin/**"};
-    
     private final UserPrincipalService userPrincipalService;
     private final int bcryptStrength;
-    private final SessionProperties sessionProperties;
 
-    /**
-     * Constructs a SecurityConfig instance to configure security-related components.
-     *
-     * @param userPrincipalService the service to manage user authentication and details retrieval.
-     * @param bcryptStrength       the strength parameter for BCrypt password encoding.
-     * @param sessionProperties    the configuration properties for managing HTTP session cookies.
-     */
-    public SecurityConfig(UserPrincipalService userPrincipalService, @Value("${security.bcrypt.strength}") int bcryptStrength, SessionProperties sessionProperties) {
+
+    public SecurityConfig(UserPrincipalService userPrincipalService,
+                          @Value("${security.bcrypt.strength}") int bcryptStrength) {
         this.userPrincipalService = userPrincipalService;
         this.bcryptStrength = bcryptStrength;
-        this.sessionProperties = sessionProperties;
     }
 
 
@@ -71,10 +61,21 @@ public class SecurityConfig {
      * @throws Exception if an error occurs during configuration.
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity, CustomAuthenticationEntryPoint authEntryPoint, CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity,
+                                           CustomAuthenticationEntryPoint authEntryPoint,
+                                           CustomAccessDeniedHandler accessDeniedHandler,
+                                           SecurityContextRepository securityContextRepository,
+                                           HttpSessionRequestCache requestCache,
+                                           RefreshSessionCookieFilter refreshSessionCookieFilter) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(
-                        SessionCreationPolicy.NEVER)
+                .securityContext(securityContext -> securityContext
+                        .securityContextRepository(securityContextRepository)
+                )
+                .requestCache(cache -> cache
+                        .requestCache(requestCache)
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
                 .authorizeHttpRequests(auth -> auth
@@ -87,7 +88,7 @@ public class SecurityConfig {
 
                 .authenticationProvider(createAuthenticationProvider())
 
-                .addFilterAfter(new RefreshSessionCookieFilter(sessionProperties), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(refreshSessionCookieFilter, SecurityContextHolderFilter.class)
 
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
@@ -164,9 +165,24 @@ public class SecurityConfig {
      *
      * @return an instance of {@link HttpSessionSecurityContextRepository}.
      */
+//    @Bean
+//    public SecurityContextRepository securityContextRepository() {
+//        return new HttpSessionSecurityContextRepository();
+//    }
     @Bean
     public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
+        return new DelegatingSecurityContextRepository(
+                new HttpSessionSecurityContextRepository(),
+                new RequestAttributeSecurityContextRepository()
+        );
+    }
+
+    /**
+     * Configure the request cache to use HTTP sessions
+     */
+    @Bean
+    public HttpSessionRequestCache httpSessionRequestCache() {
+        return new HttpSessionRequestCache();
     }
 
 }

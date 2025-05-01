@@ -39,6 +39,16 @@ public class SessionProperties {
                 .build();
     }
 
+    public Cookie updateSessionCookie(String name, String value) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(httpOnly);
+        cookie.setSecure(secure);
+        cookie.setPath(path);
+        cookie.setDomain(domain);
+        cookie.setMaxAge(maxAge);
+        return cookie;
+    }
+    
     /**
      * Creates a cookie that will immediately expire, effectively deleting the session
      *

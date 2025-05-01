@@ -8,11 +8,22 @@ import me.abouabra.zovo.enums.ApiCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.io.Serializable;
+
+/**
+ * A generic API response wrapper for consistent response structure.
+ * <p>
+ * Encapsulates a message, response code, and optional details payload.
+ * Provides utility methods for constructing success and failure responses.
+ * </p>
+ *
+ * @param <T> The type of the optional details payload.
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class ApiResponse<T> {
+public class ApiResponse<T> implements Serializable {
     private String message;
     private ApiCode code;
     private T details;
