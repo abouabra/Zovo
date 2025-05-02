@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import me.abouabra.zovo.validators.PasswordMatches;
-import me.abouabra.zovo.validators.ValidPassword;
+import me.abouabra.zovo.annotations.PasswordMatches;
+import me.abouabra.zovo.annotations.ValidPassword;
 
 /**
  * Data Transfer Object (DTO) for handling user registration information.

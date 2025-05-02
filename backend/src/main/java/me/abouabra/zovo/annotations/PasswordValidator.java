@@ -1,4 +1,4 @@
-package me.abouabra.zovo.validators;
+package me.abouabra.zovo.annotations;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

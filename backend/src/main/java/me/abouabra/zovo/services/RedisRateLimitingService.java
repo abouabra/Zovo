@@ -1,116 +1,120 @@
 package me.abouabra.zovo.services;
 
-import lombok.RequiredArgsConstructor;
-import me.abouabra.zovo.enums.RateLimitingAction;
+import me.abouabra.zovo.enums.RedisGroupAction;
+import me.abouabra.zovo.enums.RedisNamespace;
 import me.abouabra.zovo.exceptions.TooManyRequestsException;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * A service for implementing rate-limiting functionality using Redis.
- *
- * <p>This service tracks user actions to enforce rate limits by maintaining
- * attempt counts and expiration windows in Redis. It supports identifying
- * when limits are exceeded, recording failed attempts, and resetting counters.</p>
+ * A service for managing rate-limiting functionality using Redis.
+ * <p>
+ * Implements logic to limit the frequency of actions performed by users or entities
+ * by tracking attempts and enforcing lockout durations.
  */
 @Service
-@RequiredArgsConstructor
 public class RedisRateLimitingService {
 
-    private static final int MAX_ATTEMPTS = 5;
-    private static final Duration WINDOW = Duration.ofMinutes(15);
+    private final int maxAttempts;
+    private final int windowInSeconds;
     private final StringRedisTemplate redis;
 
     /**
-     * Generates a SHA-256 hash of the provided identifier.
+     * Constructs the RedisRateLimitingService with specified rate-limiting configurations.
+     *
+     * @param maxAttempts     The maximum number of allowed attempts during the rate-limiting window.
+     * @param windowInSeconds The duration of the rate-limiting window in seconds.
+     * @param redis           The StringRedisTemplate instance for accessing Redis.
+     */
+    public RedisRateLimitingService(@Value("${app.redis.rate-limiting.max-attempts:5}") int maxAttempts, @Value("${app.redis.rate-limiting.window-seconds:900}") int windowInSeconds, StringRedisTemplate redis) {
+        this.maxAttempts = maxAttempts;
+        this.windowInSeconds = windowInSeconds;
+        this.redis = redis;
+    }
+
+    /**
+     * Generates a SHA-256 hash for the given identifier.
      *
      * @param identifier the input string to be hashed
-     * @return the SHA-256 hexadecimal representation of the input
+     * @return the hashed string in hexadecimal format
      */
     public String hashIdentifier(String identifier) {
         return DigestUtils.sha256Hex(identifier);
     }
 
     /**
-     * Generates a unique Redis key for rate-limiting purposes.
+     * Constructs a Redis key for rate-limiting purposes based on the identifier and action.
      *
-     * @param identifier The identifier of the subject to be rate-limited.
-     * @param action The specific action being rate-limited.
-     * @return A unique key for storing rate-limiting data in Redis.
+     * @param identifier The unique identifier for the client or user.
+     * @param action     The specific action being rate-limited.
+     * @return A formatted Redis key as a string.
      */
     private String key(String identifier, String action) {
-        return "ratelimit:" + action + ":" + hashIdentifier(identifier);
+        return RedisNamespace.RATE_LIMIT + ":" + action + ":" + hashIdentifier(identifier);
     }
 
     /**
-     * Checks if the given identifier and action have reached the rate limit.
+     * Checks if an action associated with a specific identifier is rate-limited.
      *
-     * <p>This method determines if the number of attempts for a specific identifier and action
-     * exceeds the predefined limit.</p>
-     *
-     * @param identifier The unique identifier for the user or entity being rate-limited.
-     * @param action The action to be checked for rate limiting.
+     * @param identifier A unique identifier for the user or entity (e.g., user ID or IP address).
+     * @param action     The specific action that is being checked for rate limiting.
      * @return {@code true} if the action is rate-limited, {@code false} otherwise.
      */
     public boolean isRateLimited(String identifier, String action) {
         String k = key(identifier, action);
         String value = redis.opsForValue().get(k);
-        return value != null && Integer.parseInt(value) >= MAX_ATTEMPTS;
+        return value != null && Integer.parseInt(value) >= maxAttempts;
     }
 
     /**
-     * Records a failed attempt for a specific identifier and action, incrementing the attempt count.
-     * If it is the first attempt, sets an expiration time for the rate-limit window.
+     * Records a failed attempt for the specified identifier and action.
+     * <p>
+     * Increments the failure count in Redis and sets an expiration time
+     * if this is the first recorded attempt.
      *
-     * @param identifier A unique identifier, such as a user ID or IP address, used for tracking attempts.
-     * @param action     The specific action being rate-limited (e.g., login or registration).
+     * @param identifier the unique identifier for the subject (e.g., user, IP).
+     * @param action     the specific action being rate limited.
      */
     public void recordFailedAttempt(String identifier, String action) {
         String k = key(identifier, action);
 
         Long count = redis.opsForValue().increment(k);
         if (count != null && count == 1L)
-            redis.expire(k, WINDOW.getSeconds(), TimeUnit.SECONDS);
+            redis.expire(k, Duration.ofSeconds(windowInSeconds).getSeconds(), TimeUnit.SECONDS);
     }
 
     /**
-     * Resets the failed attempt count for a specific identifier and action.
+     * Retrieves the remaining lockout duration for the specified identifier and action.
      *
-     * @param identifier the unique identifier for the entity being rate limited, such as a user or IP address.
-     * @param action the specific action being rate limited (e.g., login attempts).
-     */
-    public void resetAttempts(String identifier, String action) {
-        redis.delete(key(identifier, action));
-    }
-
-    /**
-     * Retrieves the remaining lockout duration for a given identifier and action.
-     *
-     * @param identifier the unique identifier of the user or entity.
-     * @param action the specific action being rate-limited.
-     * @return the remaining lockout duration in seconds, or 0 if no lockout is active.
+     * @param identifier The unique identifier for the user or entity.
+     * @param action     The specific action being rate-limited.
+     * @return The remaining lockout duration in seconds, or 0 if no lockout is active.
      */
     public long getLockoutDurationRemaining(String identifier, String action) {
         Long ttl = redis.getExpire(key(identifier, action), TimeUnit.SECONDS);
         return ttl > 0 ? ttl : 0L;
     }
 
-
     /**
-     * Wraps the execution of a function while applying rate limiting logic.
+     * Wraps the execution of a function with rate-limiting logic.
+     * <p>
+     * Executes the primary function if the action is not rate-limited,
+     * otherwise executes the fallback function.
      *
-     * @param <T>           The type of the function's return value.
-     * @param identifier    The unique identifier for rate-limiting checks.
-     * @param action        The specific action being performed (e.g., LOGIN, REGISTER).
-     * @param function      The main function to execute if the rate limit is not exceeded.
-     * @param onRateLimited The fallback function to execute if the rate limit is exceeded.
-     * @return The result from either the main function or the fallback function.
+     * @param <T>           The return type of the function.
+     * @param action        The RedisGroupAction associated with the process.
+     * @param identifier    The unique identifier for rate limiting.
+     * @param function      The main function to execute if not rate-limited.
+     * @param onRateLimited The fallback function to execute when rate-limited.
+     * @return The result of either the primary or fallback function.
      */
-    public <T> T wrap(String identifier, RateLimitingAction action, Supplier<T> function, Supplier<T> onRateLimited) {
+    public <T> T wrap(RedisGroupAction action, String identifier, Supplier<T> function, Supplier<T> onRateLimited) {
         if (isRateLimited(identifier, action.toString())) {
             return onRateLimited.get();
         }
@@ -124,16 +128,16 @@ public class RedisRateLimitingService {
     }
 
     /**
-     * Wraps the execution of a function while applying rate limiting.
+     * Wraps the execution of a function with rate-limiting checks and failure handling.
      *
-     * @param <T>        The type of the return value.
-     * @param identifier A unique identifier for the entity to be rate-limited.
-     * @param action     The specific action being rate-limited (e.g., login or register).
-     * @param function   The function to execute if the rate limit is not exceeded.
-     * @return The result of the executed function.
-     * @throws TooManyRequestsException if the rate limit is exceeded.
+     * @param <T>        The return type of the function being wrapped.
+     * @param action     The Redis action being performed.
+     * @param identifier A unique identifier related to the action, used for rate-limiting.
+     * @param function   The logic to execute, supplied as a {@link Supplier}.
+     * @return The result produced by the executed function.
+     * @throws TooManyRequestsException if the rate limit is exceeded for the given identifier and action.
      */
-    public <T> T wrap(String identifier, RateLimitingAction action, Supplier<T> function) {
+    public <T> T wrap(RedisGroupAction action, String identifier, Supplier<T> function) {
         if (isRateLimited(identifier, action.toString())) {
             long timeRemaining = getLockoutDurationRemaining(identifier, action.toString());
             String message = String.format("Too many failed attempts. Try again in %d minutes.", (timeRemaining / 60));

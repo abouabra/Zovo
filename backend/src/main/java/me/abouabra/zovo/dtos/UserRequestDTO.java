@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import me.abouabra.zovo.validators.ValidPassword;
+import me.abouabra.zovo.annotations.ValidPassword;
 
 @AllArgsConstructor
 @Data

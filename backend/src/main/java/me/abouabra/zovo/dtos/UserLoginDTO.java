@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import me.abouabra.zovo.validators.ValidPassword;
+import me.abouabra.zovo.annotations.ValidPassword;
 
 import java.io.Serializable;
 

@@ -5,7 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
-import me.abouabra.zovo.enums.RateLimitingAction;
+import me.abouabra.zovo.enums.RedisGroupAction;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
 import me.abouabra.zovo.services.RedisRateLimitingService;
@@ -30,8 +30,12 @@ public class AuthController {
      * success status and relevant data or error message.
      */
     @PostMapping("/register")
-    public ResponseEntity<? extends ApiResponse<?>> register(@Valid @RequestBody UserRegisterDTO registerDTO) {
-        return authService.register(registerDTO);
+    public ResponseEntity<? extends ApiResponse<?>> register(@Valid @RequestBody UserRegisterDTO registerDTO, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.register(registerDTO)
+        );
     }
 
 
@@ -47,23 +51,29 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<? extends ApiResponse<?>> login(@Valid @RequestBody UserLoginDTO loginDTO, HttpServletRequest request, HttpServletResponse response) {
         return redisRateLimitingService.wrap(
-                loginDTO.getEmail(),
-                RateLimitingAction.LOGIN,
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
                 () -> authService.login(loginDTO, request, response)
         );
     }
 
+
     /**
-     * Processes two-factor authentication (2FA) login request.
+     * Handles the login process using Two-Factor Authentication (2FA).
      *
-     * @param tokenAndCodeDTO the DTO containing the temporary token and 2FA code.
+     * @param tokenAndCodeDTO the DTO containing the 2FA token and verification code.
      * @param request         the HTTP request object.
      * @param response        the HTTP response object.
-     * @return a {@code ResponseEntity} containing an {@code ApiResponse} with the login result.
+     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with the success
+     * or failure result of the 2FA login process.
      */
     @PostMapping("/login-2fa")
     public ResponseEntity<? extends ApiResponse<?>> loginWith2FA(@RequestBody TwoFaTokenAndCodeDTO tokenAndCodeDTO, HttpServletRequest request, HttpServletResponse response) {
-        return authService.loginWith2FA(tokenAndCodeDTO, request, response);
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.loginWith2FA(tokenAndCodeDTO, request, response)
+        );
     }
 
 
@@ -76,7 +86,11 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<? extends ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
-        return authService.logout(request, response);
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.logout(request, response)
+        );
     }
 
 
@@ -87,8 +101,12 @@ public class AuthController {
      * @return a ResponseEntity containing an ApiResponse with the email confirmation result
      */
     @GetMapping("/confirm-email")
-    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestParam("token") String token) {
-        return authService.confirmEmail(token);
+    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestParam("token") String token, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.confirmEmail(token)
+        );
     }
 
 
@@ -101,8 +119,12 @@ public class AuthController {
      * @return A ResponseEntity containing an ApiResponse indicating the success or failure of the operation.
      */
     @GetMapping("/send-password-reset")
-    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(@RequestParam("email") String email) {
-        return authService.sendVerifyPasswordResetToken(email);
+    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(@RequestParam("email") String email, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.sendVerifyPasswordResetToken(email)
+        );
     }
 
 
@@ -114,8 +136,12 @@ public class AuthController {
      * the validation result, indicating success or failure.
      */
     @GetMapping("/password-reset")
-    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestParam("token") String token) {
-        return authService.verifyPasswordResetToken(token);
+    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestParam("token") String token, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.verifyPasswordResetToken(token)
+        );
     }
 
 
@@ -127,8 +153,12 @@ public class AuthController {
      * @return a ResponseEntity containing an ApiResponse to indicate the success or failure of the operation.
      */
     @PostMapping("/password-reset")
-    public ResponseEntity<? extends ApiResponse<?>> changePassword(@Valid @RequestBody PasswordResetDTO passwordResetDTO) {
-        return authService.changePassword(passwordResetDTO);
+    public ResponseEntity<? extends ApiResponse<?>> changePassword(@Valid @RequestBody PasswordResetDTO passwordResetDTO, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.changePassword(passwordResetDTO)
+        );
     }
 
 
@@ -139,8 +169,12 @@ public class AuthController {
      * @return a {@link ResponseEntity} containing the {@link ApiResponse} with 2FA QR code details or error message.
      */
     @GetMapping("/2fa/generate")
-    public ResponseEntity<? extends ApiResponse<?>> generate2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
-        return authService.generate2FA(loggedInUser);
+    public ResponseEntity<? extends ApiResponse<?>> generate2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.generate2FA(loggedInUser)
+        );
     }
 
 
@@ -153,8 +187,12 @@ public class AuthController {
      * the success or failure of enabling 2FA.
      */
     @PostMapping("/2fa/enable")
-    public ResponseEntity<? extends ApiResponse<?>> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
-        return authService.enable2FA(loggedInUser, twoFaCodeDTO);
+    public ResponseEntity<? extends ApiResponse<?>> enable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.enable2FA(loggedInUser, twoFaCodeDTO)
+        );
     }
 
 
@@ -165,7 +203,11 @@ public class AuthController {
      * @return a ResponseEntity with an ApiResponse indicating the result of the operation.
      */
     @DeleteMapping("/2fa/disable")
-    public ResponseEntity<? extends ApiResponse<?>> disable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser) {
-        return authService.disable2FA(loggedInUser);
+    public ResponseEntity<? extends ApiResponse<?>> disable2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, HttpServletRequest request) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> authService.disable2FA(loggedInUser)
+        );
     }
 }

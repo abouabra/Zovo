@@ -81,6 +81,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(ApiCode.TWO_FACTOR_ALREADY_ENABLED, ex.getMessage());
     }
 
+    @ExceptionHandler(InvalidTwoFactorCodeException.class)
+    public ResponseEntity<? extends ApiResponse<?>> handleInvalidTwoFactorCode(InvalidTwoFactorCodeException ex) {
+        return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, ex.getMessage());
+    }
+
+
 
 
 

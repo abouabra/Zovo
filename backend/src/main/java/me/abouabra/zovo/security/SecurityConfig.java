@@ -45,7 +45,7 @@ public class SecurityConfig {
 
 
     public SecurityConfig(UserPrincipalService userPrincipalService,
-                          @Value("${security.bcrypt.strength}") int bcryptStrength) {
+                          @Value("${app.security.bcrypt.strength}") int bcryptStrength) {
         this.userPrincipalService = userPrincipalService;
         this.bcryptStrength = bcryptStrength;
     }
@@ -165,10 +165,6 @@ public class SecurityConfig {
      *
      * @return an instance of {@link HttpSessionSecurityContextRepository}.
      */
-//    @Bean
-//    public SecurityContextRepository securityContextRepository() {
-//        return new HttpSessionSecurityContextRepository();
-//    }
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new DelegatingSecurityContextRepository(

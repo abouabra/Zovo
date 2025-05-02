@@ -15,15 +15,25 @@ import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+/**
+ * A service for encrypting and decrypting text using AES-GCM encryption.
+ * <p>
+ * Encryption and decryption processes include:
+ * <ul>
+ *   <li>Generating a random salt and IV for each encryption</li>
+ *   <li>Deriving an encryption key using PBKDF2</li>
+ *   <li>Encoding and decoding data in Base64 format for storage/transmission</li>
+ * </ul>
+ */
 @Service
-public class SecretEncryptionService { // TODO: understand this
+public class SecretEncryptionService {
 
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
     private static final int SALT_LENGTH = 16;
 
-    @Value("${app.encryption.secret}")
+    @Value("${app.security.secrets.two-fa}")
     private String encryptionSecret;
 
     /**

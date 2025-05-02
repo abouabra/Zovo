@@ -1,38 +1,31 @@
 #  Configuration For Development Profile
+
 # App Configuration
 app:
+  name: Zovo
   port: 8080
   base-url: "http://localhost:${app.port}"
-  encryption:
-    secret: ${TWO_FA_SECRET_KEY}
 
-# Security Configuration
-security:
-  bcrypt:
-    strength: 10
+  redis:
+    cache:
+      ttls:
+        default: 600    # 10 minutes
+        two-fa: 300     # 5 minutes
+        role: 3600      # 1 hour
+    rate-limiting:
+      max-attempts: 5
+      window-seconds: 900  # 15 minutes
 
-# Server Configuration
-server:
-  port: ${app.port}
-  servlet:
-    session:
-      timeout: 604800
-      cookie:
-        name: XSESSIONID
-        domain: localhost
-        path: /
-        max-age: 604800 # 7 days
-        secure: false
-        http-only: true
-        same-site: strict
-      tracking-modes: cookie
+  security:
+    bcrypt:
+      strength: 10
+    secrets:
+      two-fa: ${TWO_FA_SECRET_KEY}
 
 # Application Configuration
 spring:
-  main:
-    allow-bean-definition-overriding: true
   application:
-    name: Zovo
+    name: ${app.name}
 
   # Database Configuration
   datasource:
@@ -90,11 +83,12 @@ spring:
           starttls:
             enable: true
 
+  # Redis Configuration
   data:
     redis:
       host: localhost
       port: 6379
-      password: yourStrongPassword
+      password: ${REDIS_PASSWORD}
       timeout: 60000
       lettuce:
         pool:
@@ -102,27 +96,31 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  # Redis Session Configuration
   session:
     redis:
-      namespace: spring:session  # Optional prefix for session keys
+      namespace: spring  # Optional prefix for session keys
       flush-mode: on-save        # Optional, when to flush to Redis
 
+  # Redis Cache Type Configuration
   cache:
     type: redis
 
-
-  # OAuth2 Configuration
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-
+# Server Configuration
+server:
+  port: ${app.port}
+  servlet:
+    session:
+      timeout: 604800 # 7 days
+      cookie:
+        name: ZfSESSIONID
+        domain: localhost
+        path: /
+        max-age: 604800
+        secure: false
+        http-only: true
+        same-site: strict
+      tracking-modes: cookie
 
 # Logging Configuration
 logging:

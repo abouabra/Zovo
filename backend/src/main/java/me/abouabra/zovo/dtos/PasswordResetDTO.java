@@ -3,8 +3,8 @@ package me.abouabra.zovo.dtos;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import me.abouabra.zovo.validators.PasswordMatches;
-import me.abouabra.zovo.validators.ValidPassword;
+import me.abouabra.zovo.annotations.PasswordMatches;
+import me.abouabra.zovo.annotations.ValidPassword;
 
 
 /**

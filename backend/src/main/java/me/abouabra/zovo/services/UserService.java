@@ -35,7 +35,7 @@ public class UserService {
     private final CacheManager cacheManager;
 
     @Transactional
-    @Cacheable("usersCache")
+    @Cacheable(value = "usersList", key = "'default'")
     public List<UserResponseDTO> getAllUsers() {
         return userRepo
                 .findAll()
@@ -45,7 +45,7 @@ public class UserService {
     }
 
     @Transactional
-    @Cacheable(value = "userCache", key = "#userId")
+    @Cacheable(value = "usersList", key = "#userId")
     public UserResponseDTO getUserById(int userId) {
 
         User user = userRepo.findById(userId)
