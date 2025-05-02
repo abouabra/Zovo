@@ -6,13 +6,23 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.enums.RedisGroupAction;
+import me.abouabra.zovo.models.OAuthConnection;
+import me.abouabra.zovo.models.User;
+import me.abouabra.zovo.repositories.OAuthConnectionRepository;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
 import me.abouabra.zovo.services.RedisRateLimitingService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -20,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private AuthService authService;
     private RedisRateLimitingService redisRateLimitingService;
+    private final OAuthConnectionRepository oAuthConnectionRepository;
 
     /**
      * Handles user registration by processing the provided registration details.
@@ -209,5 +220,15 @@ public class AuthController {
                 request.getRemoteAddr(),
                 () -> authService.disable2FA(loggedInUser)
         );
+    }
+
+    @GetMapping("/oauth2/providers")
+    public ResponseEntity<?> getOAuthProviders() {
+        // Return available OAuth providers
+        Map<String, String> providers = new HashMap<>();
+        providers.put("google", "/api/v1/auth/oauth2/authorize/google");
+        providers.put("github", "/api/v1/auth/oauth2/authorize/github");
+
+        return ResponseEntity.ok(providers);
     }
 }
