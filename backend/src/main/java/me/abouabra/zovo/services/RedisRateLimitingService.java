@@ -1,5 +1,6 @@
 package me.abouabra.zovo.services;
 
+import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.enums.RedisGroupAction;
 import me.abouabra.zovo.enums.RedisNamespace;
 import me.abouabra.zovo.exceptions.TooManyRequestsException;
@@ -18,6 +19,7 @@ import java.util.function.Supplier;
  * Implements logic to limit the frequency of actions performed by users or entities
  * by tracking attempts and enforcing lockout durations.
  */
+@Slf4j
 @Service
 public class RedisRateLimitingService {
 
@@ -147,6 +149,7 @@ public class RedisRateLimitingService {
         try {
             return function.get();
         } catch (Exception e) {
+            log.debug("Rate-limiting failed for action {} and identifier {}", action, identifier);
             recordFailedAttempt(identifier, action.toString());
             throw e;
         }
