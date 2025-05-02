@@ -6,23 +6,19 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.enums.RedisGroupAction;
-import me.abouabra.zovo.models.OAuthConnection;
 import me.abouabra.zovo.models.User;
-import me.abouabra.zovo.repositories.OAuthConnectionRepository;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
+import me.abouabra.zovo.services.OAuth2Service;
 import me.abouabra.zovo.services.RedisRateLimitingService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,7 +26,7 @@ import java.util.stream.Collectors;
 public class AuthController {
     private AuthService authService;
     private RedisRateLimitingService redisRateLimitingService;
-    private final OAuthConnectionRepository oAuthConnectionRepository;
+    private OAuth2Service oAuth2Service;
 
     /**
      * Handles user registration by processing the provided registration details.
@@ -230,5 +226,28 @@ public class AuthController {
         providers.put("github", "/api/v1/auth/oauth2/authorize/github");
 
         return ResponseEntity.ok(providers);
+    }
+
+    @GetMapping("/oauth2/authorize/{provider}")
+    public void oauth2Authorize(
+            @PathVariable("provider") String provider,
+            HttpServletResponse response
+    ) throws IOException {
+        String authorizationUrl = oAuth2Service.getAuthorizationUrl(provider); // Compose from config
+        response.sendRedirect(authorizationUrl);
+    }
+
+    @GetMapping("/oauth2/callback/{provider}")
+    public ResponseEntity<?> oauth2Callback(
+            @PathVariable("provider") String provider,
+            @RequestParam Map<String, String> params,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        String code = params.get("code");
+        if (code == null || code.isEmpty()) {
+            return ResponseEntity.badRequest().body("Missing code parameter");
+        }
+        return oAuth2Service.handleCallback(provider, code);
     }
 }

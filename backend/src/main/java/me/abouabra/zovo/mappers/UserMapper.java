@@ -7,6 +7,7 @@ import me.abouabra.zovo.dtos.UserResponseDTO;
 import me.abouabra.zovo.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 import java.io.Serializable;
 
@@ -24,32 +25,9 @@ import java.io.Serializable;
  *
  * <p>Designed for use in Spring-based applications.</p>
  */
-@Mapper(componentModel = "spring", uses = {RoleMapper.class})
+@Mapper(componentModel = "spring", uses = {RoleMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper extends Serializable {
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
     User toUser(UserRegisterDTO userRegisterDTO);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "email", ignore = true)
-    User toUser(PasswordResetDTO passwordResetDTO);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "username", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "roles", ignore = true)
-    @Mapping(target = "active", ignore = true)
-    @Mapping(target = "enabled", ignore = true)
-    User toUser(UserLoginDTO userLoginDTO);
-
     UserResponseDTO toDTO(User user);
-
 }
