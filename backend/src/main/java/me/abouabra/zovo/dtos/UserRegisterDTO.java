@@ -9,46 +9,22 @@ import lombok.Data;
 import me.abouabra.zovo.annotations.PasswordMatches;
 import me.abouabra.zovo.annotations.ValidPassword;
 
+import java.util.Locale;
+
+
 /**
- * Data Transfer Object (DTO) for handling user registration information.
- * This class is used to encapsulate the necessary data for registering a new user,
- * including username, email, password, and password confirmation. Validation
- * constraints are applied to ensure data integrity and adherence to specified rules.
+ * Data Transfer Object (DTO) for registering a new user.
  * <p>
- * The class includes the following validations:
+ * This class encapsulates the user registration data, including
+ * username, email, password, and password confirmation. It also
+ * includes validation to ensure data integrity:
  * <ul>
- * <li>The {@code username} field:
- *     <ul>
- *     <li>Must not be blank</li>
- *     <li>Must be between 3 and 30 characters long</li>
- *     <li>Can only contain alphanumeric characters and underscores</li>
- *     </ul>
- * </li>
- * <li>The {@code email} field:
- *     <ul>
- *     <li>Must not be blank</li>
- *     <li>Must follow a valid email format</li>
- *     </ul>
- * </li>
- * <li>The {@code password} field:
- *     <ul>
- *     <li>Must not be blank</li>
- *     <li>Must comply with the custom {@code ValidPassword} annotation to
- *         ensure predefined security requirements such as containing uppercase
- *         letters, lowercase letters, and numbers</li>
- *     </ul>
- * </li>
- * <li>The {@code passwordConfirmation} field:
- *     <ul>
- *     <li>Must not be blank</li>
- *     <li>Must comply with the custom {@code ValidPassword} annotation</li>
- *     </ul>
- * </li>
+ * <li>{@code username}: Alphanumeric with underscores, 3-30 characters.</li>
+ * <li>{@code email}: Valid email format ensured.</li>
+ * <li>{@code password} & {@code passwordConfirmation}: Match enforced and must meet strong password requirements.</li>
  * </ul>
  * <p>
- * In addition, the class is validated at the class-level through the
- * {@code PasswordMatches} annotation to ensure the password and
- * password confirmation fields match.
+ * Includes a custom annotation {@code @PasswordMatches} to validate password confirmation.
  */
 @AllArgsConstructor
 @Data
@@ -71,4 +47,8 @@ public class UserRegisterDTO {
     @NotBlank(message = "Password Confirmation cannot be blank")
     @ValidPassword
     private String passwordConfirmation;
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.toLowerCase(Locale.ROOT);
+    }
 }

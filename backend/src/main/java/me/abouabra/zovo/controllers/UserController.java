@@ -1,7 +1,7 @@
 package me.abouabra.zovo.controllers;
 
 import lombok.AllArgsConstructor;
-import me.abouabra.zovo.dtos.UserResponseDTO;
+import me.abouabra.zovo.dtos.UserDTO;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.UserService;
 import me.abouabra.zovo.utils.ApiResponse;
@@ -22,14 +22,14 @@ public class UserController {
 
     @GetMapping("/")
     public ResponseEntity<? extends ApiResponse<?>> getAllUsers() {
-        List< UserResponseDTO > dto = userService.getAllUsers();
-        return ApiResponse.success(dto);
+        List<UserDTO> usersListDTO = userService.getAllUsers();
+        return ApiResponse.success(usersListDTO);
     }
 
     @GetMapping("/{userId}")
     public ResponseEntity<? extends ApiResponse<?>> getUserById(@PathVariable int userId) {
-        UserResponseDTO responseDTO = userService.getUserById(userId);
-        return ApiResponse.success(responseDTO);
+        UserDTO userDTO = userService.getUserById(userId);
+        return ApiResponse.success(userDTO);
     }
 
     @GetMapping("/me")

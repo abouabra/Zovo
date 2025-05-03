@@ -21,6 +21,7 @@ import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
+import me.abouabra.zovo.services.redis.RedisStorageService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.apache.commons.codec.binary.Base32;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
@@ -45,13 +47,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 
+
 /**
- * The {@code AuthService} class provides authentication and authorization
- * functionalities, such as user registration, login, email verification,
- * password reset, and two-factor authentication (2FA) management.
+ * The {@code AuthService} class handles user authentication, registration,
+ * two-factor authentication (2FA), OAuth2 logins, password management, and account activation.
  * <p>
- * This service integrates with various components like repositories,
- * encryption, and email services to handle secure user account operations.
+ * It integrates with various services including email, token management,
+ * encryption, and session management to provide a comprehensive authentication
+ * solution.
  * </p>
  */
 @Service
@@ -83,6 +86,7 @@ public class AuthService {
      * @throws RoleNotFoundException      if the default role is not found in the database.
      */
     public ResponseEntity<? extends ApiResponse<?>> register(@Valid UserRegisterDTO requestDTO) {
+
         if (userRepo.existsByUsernameOrEmail(requestDTO.getUsername(), requestDTO.getEmail())) {
             if (userRepo.findUserByUsername(requestDTO.getUsername()).isPresent()) {
                 throw new UserAlreadyExistsException("Username '%s' is already taken".formatted(requestDTO.getUsername()));
@@ -118,24 +122,15 @@ public class AuthService {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         User user = userPrincipal.getUser();
 
-        if (user.isTwoFactorEnabled()) {
-            String token = UUID.randomUUID().toString();
-
-            redisStorageService.set2FASession(token, user.getEmail());
-            log.info("2FA is enabled for user: {}", user.getEmail());
-
-            return ApiResponse.success("Please enter your 2FA code to complete login",
-                    ApiCode.LOGIN_NEEDS_2FA,
-                    Map.of("token", token)
-            );
-        }
+        ResponseEntity<? extends ApiResponse<?>> twoFactorAuthChallengeIfEnabled = generateTwoFactorAuthChallengeIfEnabled(user, "EmailPassword", null);
+        if (twoFactorAuthChallengeIfEnabled != null) return twoFactorAuthChallengeIfEnabled;
 
         SecurityContext context = createAndSetSecurityContext(authentication);
         HttpSession newSession = createNewSession(request, context);
         response.addCookie(sessionProperties.createSessionCookie(newSession));
 
-        UserResponseDTO responseDTO = userMapper.toDTO(userPrincipal.getUser());
-        return ApiResponse.success("Logged in successfully", responseDTO);
+        UserDTO userDTO = userMapper.toDTO(userPrincipal.getUser());
+        return ApiResponse.success("Logged in successfully", userDTO);
     }
 
     /**
@@ -175,9 +170,9 @@ public class AuthService {
         SecurityContext context = createAndSetSecurityContext(authentication);
         HttpSession newSession = createNewSession(request, context);
         response.addCookie(sessionProperties.createSessionCookie(newSession));
-        UserResponseDTO responseDTO = userMapper.toDTO(user);
+        UserDTO userDTO = userMapper.toDTO(user);
 
-        return ApiResponse.success("Logged in successfully", responseDTO);
+        return ApiResponse.success("Logged in successfully", userDTO);
     }
 
     /**
@@ -393,6 +388,61 @@ public class AuthService {
 
 
 
+
+
+
+
+
+
+    /**
+     * Generates a two-factor authentication challenge if it is enabled for the user.
+     *
+     * @param user      The user attempting to authenticate.
+     * @param provider  The 2FA provider being used (e.g., authenticator app, email).
+     * @param redirectURI An optional redirect URI for web-based 2FA flow.
+     * @return A {@code ResponseEntity} with the appropriate response, either a 2FA challenge or null if 2FA is not enabled.
+     */
+    public ResponseEntity<? extends ApiResponse<?>> generateTwoFactorAuthChallengeIfEnabled(User user, String provider, String redirectURI) {
+        if (user.isTwoFactorEnabled()) {
+            String token = UUID.randomUUID().toString();
+
+            redisStorageService.set2FASession(token, user.getEmail());
+            log.info("2FA is enabled for user: {}", user.getEmail());
+
+            TwoFaChallengeEnabledDTO twoFaChallengeEnabledDTO = new TwoFaChallengeEnabledDTO(token, provider);
+            Map<String, Object> responseData = getStringObjectMap(twoFaChallengeEnabledDTO);
+
+            if(redirectURI != null && !redirectURI.isBlank())
+                return ApiResponse.redirect(redirectURI, responseData);
+
+            return ApiResponse.success("Please enter your 2FA code to complete login", ApiCode.LOGIN_NEEDS_2FA, responseData);
+        }
+        return null;
+    }
+
+
+    /**
+     * Converts the fields of the given object into a map with field names as keys
+     * and their values as map values.
+     *
+     * @param <T> the type of the input object
+     * @param object the object to be converted into a map
+     * @return a map containing field names as keys and corresponding field values
+     */
+    public <T> Map<String, Object> getStringObjectMap(T object) {
+        Map<String, Object> response = new HashMap<>();
+        for (Field field : object.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                response.put(field.getName(), field.get(object));
+            } catch (IllegalAccessException e) {
+                log.error("Error accessing field: {}", field.getName(), e);
+            }
+        }
+        return response;
+    }
+
+
     /**
      * Saves a new user based on the provided registration details, assigns a default role,
      * and persists it in the database.
@@ -439,7 +489,7 @@ public class AuthService {
      * @param authentication the {@link Authentication} object to set in the security context
      * @return the created {@link SecurityContext} with the provided authentication
      */
-    private SecurityContext createAndSetSecurityContext(Authentication authentication) {
+    public SecurityContext createAndSetSecurityContext(Authentication authentication) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
@@ -455,7 +505,7 @@ public class AuthService {
      * @param context the {@link SecurityContext} to associate with the new session
      * @return the newly created {@link HttpSession} instance
      */
-    private HttpSession createNewSession(HttpServletRequest request, SecurityContext context) {
+    public HttpSession createNewSession(HttpServletRequest request, SecurityContext context) {
         HttpSession oldSession = request.getSession(false);
         if (oldSession != null) {
             oldSession.invalidate();
@@ -598,4 +648,16 @@ public class AuthService {
         userRepo.save(user);
     }
 
+    /**
+     * Retrieves available OAuth providers and their authorization URLs.
+     *
+     * @return a ResponseEntity containing an ApiResponse with a map of providers and their URLs.
+     */
+    public ResponseEntity<? extends ApiResponse<?>> getOAuthProviders() {
+        Map<String, String> providers = new HashMap<>();
+        providers.put("google", "/api/v1/auth/oauth2/authorize/google");
+        providers.put("github", "/api/v1/auth/oauth2/authorize/github");
+
+        return ApiResponse.success(providers);
+    }
 }

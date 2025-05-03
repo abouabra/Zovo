@@ -30,7 +30,7 @@ public class SessionProperties {
     private boolean httpOnly = true;
     private boolean secure = false; // TODO: enable when HTTPS is enabled
     private String domain;
-    private SameSite sameSite = SameSite.STRICT;
+    private SameSite sameSite = SameSite.LAX;
 
 
     public Cookie createSessionCookie(HttpSession session) {

@@ -1,4 +1,4 @@
-package me.abouabra.zovo.services;
+package me.abouabra.zovo.services.redis;
 
 import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.enums.RedisGroupAction;
@@ -101,32 +101,6 @@ public class RedisRateLimitingService {
     public long getLockoutDurationRemaining(String identifier, String action) {
         Long ttl = redis.getExpire(key(identifier, action), TimeUnit.SECONDS);
         return ttl > 0 ? ttl : 0L;
-    }
-
-    /**
-     * Wraps the execution of a function with rate-limiting logic.
-     * <p>
-     * Executes the primary function if the action is not rate-limited,
-     * otherwise executes the fallback function.
-     *
-     * @param <T>           The return type of the function.
-     * @param action        The RedisGroupAction associated with the process.
-     * @param identifier    The unique identifier for rate limiting.
-     * @param function      The main function to execute if not rate-limited.
-     * @param onRateLimited The fallback function to execute when rate-limited.
-     * @return The result of either the primary or fallback function.
-     */
-    public <T> T wrap(RedisGroupAction action, String identifier, Supplier<T> function, Supplier<T> onRateLimited) {
-        if (isRateLimited(identifier, action.toString())) {
-            return onRateLimited.get();
-        }
-
-        try {
-            return function.get();
-        } catch (Exception e) {
-            recordFailedAttempt(identifier, action.toString());
-            throw e;
-        }
     }
 
     /**

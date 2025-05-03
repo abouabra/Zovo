@@ -5,21 +5,30 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import me.abouabra.zovo.dtos.*;
+import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.enums.RedisGroupAction;
-import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
-import me.abouabra.zovo.services.OAuth2Service;
-import me.abouabra.zovo.services.RedisRateLimitingService;
+import me.abouabra.zovo.services.redis.RedisRateLimitingService;
+import me.abouabra.zovo.services.oauth2.OAuth2Service;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The {@code AuthController} handles authentication and authorization operations.
+ * <p>
+ * This includes user registration, login, logout, email confirmation, password resets,
+ * Two-Factor Authentication (2FA), and OAuth2 social login flows. The controller
+ * applies rate limiting to prevent abuse.
+ * <p>
+ * Endpoints are secured and return {@code ResponseEntity} objects containing
+ * appropriate {@code ApiResponse} details in the response.
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
 @AllArgsConstructor
@@ -219,35 +228,28 @@ public class AuthController {
     }
 
     @GetMapping("/oauth2/providers")
-    public ResponseEntity<?> getOAuthProviders() {
-        // Return available OAuth providers
-        Map<String, String> providers = new HashMap<>();
-        providers.put("google", "/api/v1/auth/oauth2/authorize/google");
-        providers.put("github", "/api/v1/auth/oauth2/authorize/github");
-
-        return ResponseEntity.ok(providers);
+    public ResponseEntity<? extends ApiResponse<?>> getOAuthProviders() {
+        return authService.getOAuthProviders();
     }
 
     @GetMapping("/oauth2/authorize/{provider}")
-    public void oauth2Authorize(
-            @PathVariable("provider") String provider,
-            HttpServletResponse response
-    ) throws IOException {
-        String authorizationUrl = oAuth2Service.getAuthorizationUrl(provider); // Compose from config
+    public void oauth2Authorize(@PathVariable("provider") String provider, HttpServletResponse response) throws IOException {
+        String authorizationUrl = oAuth2Service.getAuthorizationUrl(provider);
         response.sendRedirect(authorizationUrl);
     }
 
     @GetMapping("/oauth2/callback/{provider}")
-    public ResponseEntity<?> oauth2Callback(
-            @PathVariable("provider") String provider,
-            @RequestParam Map<String, String> params,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) {
-        String code = params.get("code");
-        if (code == null || code.isEmpty()) {
-            return ResponseEntity.badRequest().body("Missing code parameter");
-        }
-        return oAuth2Service.handleCallback(provider, code);
+    public ResponseEntity<?> oauth2Callback(@PathVariable("provider") String provider, @RequestParam Map<String, String> params, HttpServletRequest request, HttpServletResponse response) {
+        return redisRateLimitingService.wrap(
+                RedisGroupAction.AUTH,
+                request.getRemoteAddr(),
+                () -> {
+                    String code = params.get("code");
+                    if (code == null || code.isEmpty())
+                        return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing code parameter");
+                    return oAuth2Service.handleCallback(provider, code, request, response);
+                }
+        );
     }
 }
+

@@ -7,17 +7,21 @@ import lombok.Setter;
 import me.abouabra.zovo.enums.ApiCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.Serializable;
+import java.util.Map;
+
 
 /**
- * A generic API response wrapper for consistent response structure.
- * <p>
- * Encapsulates a message, response code, and optional details payload.
- * Provides utility methods for constructing success and failure responses.
- * </p>
+ * <p>Represents a standardized structure for API responses.</p>
  *
- * @param <T> The type of the optional details payload.
+ * <ul>
+ *   <li>Encapsulates a message, an API response code, and optional details.</li>
+ *   <li>Provides utility methods for uniform success and failure responses.</li>
+ *   <li>Facilitates structured REST API communication.</li>
+ *   <li>Supports generic type details for flexible response payloads.</li>
+ * </ul>
  */
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,6 +36,7 @@ public class ApiResponse<T> implements Serializable {
     public static <T> ResponseEntity<ApiResponse<T>> success(String message) {
         return ResponseEntity.ok(new ApiResponse<>(message, ApiCode.SUCCESS, null));
     }
+
     public static <T> ResponseEntity<ApiResponse<T>> success(T details) {
         return ResponseEntity.ok(new ApiResponse<>(null, ApiCode.SUCCESS, details));
     }
@@ -54,6 +59,19 @@ public class ApiResponse<T> implements Serializable {
 
     public static <T> ResponseEntity<ApiResponse<T>> failure(HttpStatus status, ApiCode code, String message, T details) {
         return ResponseEntity.status(status).body(new ApiResponse<>(message, code, details));
+    }
+
+    public static <T> ResponseEntity<ApiResponse<T>> redirect(String callbackUri, Map<String, Object> responseData) {
+        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUriString(callbackUri);
+
+        for (Map.Entry<String, Object> entry : responseData.entrySet()) {
+            uriComponentsBuilder.queryParam(entry.getKey(), entry.getValue());
+        }
+        String redirectUri = uriComponentsBuilder.build().toString();
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", redirectUri)
+                .build();
     }
 }
 

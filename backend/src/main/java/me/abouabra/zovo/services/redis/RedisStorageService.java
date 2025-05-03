@@ -1,4 +1,4 @@
-package me.abouabra.zovo.services;
+package me.abouabra.zovo.services.redis;
 
 import me.abouabra.zovo.enums.RedisGroupAction;
 import me.abouabra.zovo.enums.RedisNamespace;
@@ -72,17 +72,6 @@ public class RedisStorageService {
     public void delete(String key) {
         redisTemplate.delete(key);
     }
-
-    /**
-     * Checks if a specified key exists in the Redis storage.
-     *
-     * @param key the key to check for existence in Redis.
-     * @return {@code true} if the key exists, {@code false} otherwise.
-     */
-    public boolean exists(String key) {
-        return redisTemplate.hasKey(key);
-    }
-
 
     /**
      * Stores a role in Redis with a specified key and time-to-live (TTL).

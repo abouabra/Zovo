@@ -86,12 +86,15 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<? extends ApiResponse<?>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ApiResponse.failure(ApiCode.ILLEGAL_ARGUMENT, ex.getMessage());
+    }
 
 
 
 
 
-    // all the below are just general fallbacks
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<? extends ApiResponse<?>> handleHttpRequestMethodNotSupported() {
         return ApiResponse.failure(HttpStatus.METHOD_NOT_ALLOWED, ApiCode.METHOD_NOT_ALLOWED, "HTTP request method not supported.");

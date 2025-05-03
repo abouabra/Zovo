@@ -17,8 +17,7 @@ app:
       window-seconds: 900  # 15 minutes
 
   oauth2:
-    redirectUri: "http://localhost:3000/oauth/callback"
-    failureRedirectUri: "http://localhost:3000/oauth/error"
+    redirect-prefix: "http://localhost:3000/oauth/callback"
 
   security:
     bcrypt:
@@ -110,6 +109,7 @@ spring:
   cache:
     type: redis
 
+  # OAuth2 Security Configuration
   security:
     oauth2:
       client:
@@ -117,30 +117,20 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/api/v1/auth/oauth2/callback/{registrationId}"
-            scope:
-              - openid
-              - profile
-              - email
+            redirect-uri: "${app.base-url}/api/v1/auth/oauth2/callback/google"
           github:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/api/v1/auth/oauth2/callback/{registrationId}"
-            scope:
-              - user:email
-              - read:user
+            redirect-uri: "${app.base-url}/api/v1/auth/oauth2/callback/github"
         provider:
           google:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
-            user-name-attribute: sub
-            jwk-set-uri:     https://www.googleapis.com/oauth2/v3/certs
           github:
             authorization-uri: https://github.com/login/oauth/authorize
             token-uri: https://github.com/login/oauth/access_token
             user-info-uri: https://api.github.com/user
-            user-name-attribute: id
 
 
 # Server Configuration
@@ -156,7 +146,7 @@ server:
         max-age: 604800
         secure: false
         http-only: true
-        same-site: none
+        same-site: lax
       tracking-modes: cookie
 
 # Logging Configuration

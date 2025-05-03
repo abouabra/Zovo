@@ -1,9 +1,6 @@
 package me.abouabra.zovo.mappers;
 
-import me.abouabra.zovo.dtos.PasswordResetDTO;
-import me.abouabra.zovo.dtos.UserLoginDTO;
-import me.abouabra.zovo.dtos.UserRegisterDTO;
-import me.abouabra.zovo.dtos.UserResponseDTO;
+import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.models.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,21 +10,24 @@ import java.io.Serializable;
 
 
 /**
- * <p>The <code>UserMapper</code> interface defines mapping functionality between
- * <code>User</code> entities and their corresponding DTO classes.</p>
+ * <p>UserMapper is an interface for mapping between {@code User}, {@code UserDTO},
+ * and {@code UserRegisterDTO} objects.</p>
  *
+ * <p>It uses MapStruct to automatically generate mapping implementations at compile time.
+ * The mappings include converting user data and normalizing email fields.</p>
+ *
+ * <p>Configuration:</p>
  * <ul>
- *     <li>Converts DTOs to <code>User</code> entities.</li>
- *     <li>Converts <code>User</code> entities to response DTOs.</li>
- *     <li>Utilizes MapStruct for automatic implementation generation.</li>
- *     <li>Depends on <code>RoleMapper</code> for role conversions.</li>
+ *   <li>{@code componentModel = "spring"}: Enables integration as a Spring Bean.</li>
+ *   <li>{@code unmappedTargetPolicy = ReportingPolicy.IGNORE}: Ignores unmapped targets.</li>
  * </ul>
  *
- * <p>Designed for use in Spring-based applications.</p>
+ * <p>This mapper is {@code Serializable} for safe object serialization.</p>
  */
-@Mapper(componentModel = "spring", uses = {RoleMapper.class}, unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper extends Serializable {
+    @Mapping(target = "email", expression = "java(userRegisterDTO.getEmail().toLowerCase(java.util.Locale.ROOT))")
     User toUser(UserRegisterDTO userRegisterDTO);
 
-    UserResponseDTO toDTO(User user);
+    UserDTO toDTO(User user);
 }

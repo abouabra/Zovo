@@ -8,20 +8,21 @@ import lombok.NoArgsConstructor;
 import me.abouabra.zovo.annotations.ValidPassword;
 
 import java.io.Serializable;
+import java.util.Locale;
+
 
 /**
- * Data Transfer Object (DTO) for handling user login information.
- * This class is used to encapsulate the email and password
- * provided during the login process.
+ * Data Transfer Object (DTO) representing user login details.
  * <p>
- * - The {@code email} field is required and must follow a valid email format.
- *   A validation constraint is applied to ensure that it is not blank and
- *   adheres to the standard email format.
+ * This class is used to encapsulate the email and password provided
+ * by the user during the login process. It includes validation annotations
+ * to ensure proper data format:
+ * <ul>
+ * <li><b>email</b>: Must be in a valid email format and cannot be blank.</li>
+ * <li><b>password</b>: Must adhere to strong password constraints and cannot be blank.</li>
+ * </ul>
  * <p>
- * - The {@code password} field is required and must comply with the
- *   custom {@code ValidPassword} annotation. This ensures that the password satisfies
- *   predefined security requirements, such as inclusion of uppercase letters,
- *   lowercase letters, and numbers.
+ * Utilizes Lombok annotations to reduce boilerplate code.
  */
 @AllArgsConstructor
 @NoArgsConstructor
@@ -35,4 +36,8 @@ public class UserLoginDTO implements Serializable {
     @NotBlank(message = "Password cannot be blank")
     @ValidPassword
     private String password;
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.toLowerCase(Locale.ROOT);
+    }
 }

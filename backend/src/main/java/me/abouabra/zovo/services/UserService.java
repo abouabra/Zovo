@@ -2,7 +2,7 @@ package me.abouabra.zovo.services;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import me.abouabra.zovo.dtos.UserResponseDTO;
+import me.abouabra.zovo.dtos.UserDTO;
 import me.abouabra.zovo.exceptions.UserNotFoundException;
 import me.abouabra.zovo.mappers.UserMapper;
 import me.abouabra.zovo.models.User;
@@ -36,7 +36,7 @@ public class UserService {
 
     @Transactional
     @Cacheable(value = "usersList", key = "'default'")
-    public List<UserResponseDTO> getAllUsers() {
+    public List<UserDTO> getAllUsers() {
         return userRepo
                 .findAll()
                 .stream()
@@ -46,7 +46,7 @@ public class UserService {
 
     @Transactional
     @Cacheable(value = "usersList", key = "#userId")
-    public UserResponseDTO getUserById(int userId) {
+    public UserDTO getUserById(int userId) {
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with id '%d' was not found".formatted(userId)));
