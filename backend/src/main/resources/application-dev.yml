@@ -4,7 +4,7 @@
 app:
   name: Zovo
   port: 8080
-  base-url: "http://localhost:${app.port}"
+  base-url: "http://localhost"
 
   redis:
     cache:

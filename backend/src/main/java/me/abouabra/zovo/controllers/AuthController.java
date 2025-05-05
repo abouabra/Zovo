@@ -41,6 +41,7 @@ public class AuthController {
 
     @GetMapping("/is-authenticated")
     public ResponseEntity<? extends ApiResponse<?>> isAuthenticated(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        log.error("isAuthenticated: {}", loggedInUser == null);
         return loggedInUser == null
                 ? ApiResponse.failure(ApiCode.UNAUTHORIZED, "User not authenticated")
                 : ApiResponse.success("User is authenticated");

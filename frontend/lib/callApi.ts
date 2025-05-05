@@ -26,11 +26,7 @@ export async function callApi<T>(path: string, options: RequestInit = {}): Promi
 
   if (!res.ok) {
     toast(data.code, {
-      description: data.message,
-      action: {
-        label: "Try again",
-        onClick: () => callApi(path, options),
-      },
+      description: data.message
     })
     throw new Error(data.message || "Something went wrong");
     // if (Array.isArray(data.details)) {

@@ -1,5 +1,4 @@
 "use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -11,6 +10,12 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/loading-screen";
+import { useTwoFAStore } from '@/stores/use2FAStore';
+
+interface TwoFaResponse {
+	token: string;
+	provider: string;
+}
 
 const FormSchema = z.object({
 	email: z.string().email({
@@ -21,7 +26,7 @@ const FormSchema = z.object({
 	}),
 });
 
-export default function EmailPasswordForm() {
+export default function LoginForm() {
 	const [showPassword, setShowPassword] = useState<boolean>(false);
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -38,19 +43,22 @@ export default function EmailPasswordForm() {
 		try {
 			setIsLoading(true);
 
-			const res = await callApi("/auth/login", {
+			const res = await callApi<TwoFaResponse>("/auth/login", {
 				method: "POST",
 				body: JSON.stringify({
 					email: data.email,
 					password: data.password,
 				}),
 			});
-
-			if (res.code === "LOGIN_NEEDS_2FA") {
-				console.log("2FA required");
+			if (res.code === "LOGIN_NEEDS_2FA" && res.details) {
+				console.log("2FA required: ", res );
+				useTwoFAStore.getState().setTwoFAData({
+					token: res.details.token,
+				});
+				router.push("/auth/2fa");
 			} else {
 				console.log("Login successful");
-				router.replace("/home");
+				router.push("/home");
 			}
 		} catch (err) {
 			console.error("Login error:", err);

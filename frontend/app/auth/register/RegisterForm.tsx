@@ -8,6 +8,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { callApi } from "@/lib/callApi";
+import CheckEmailFullscreen from "./check-email-fullscreen";
+import LoadingScreen from "@/components/loading-screen";
 
 const FormSchema = z
 	.object({
@@ -30,6 +33,8 @@ const FormSchema = z
 	});
 
 export default function EmailPasswordForm() {
+	const [isLoading, setIsLoading] = useState(false);
+	const [isRegistered, setIsRegistered] = useState(false);
 	const [showPassword, setShowPassword] = useState<boolean>(false);
 	const [showPasswordConfirmation, setShowPasswordConfirmation] = useState<boolean>(false);
 
@@ -43,79 +48,107 @@ export default function EmailPasswordForm() {
 		},
 	});
 
-	function onSubmit(data: z.infer<typeof FormSchema>) {
-		console.log(data);
-	}
+	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+		try {
+			setIsLoading(true);
+
+			console.log("Form submitted:", data);
+			const res = await callApi("/auth/register", {
+				method: "POST",
+				body: JSON.stringify({
+					username: data.username,
+					email: data.email,
+					password: data.password,
+					passwordConfirmation: data.passwordConfirmation,
+				}),
+			});
+			if (res.code === "SUCCESS") {
+				console.log("Register successful: ", res);
+				setIsRegistered(true);
+			} else {
+			}
+		} catch (err) {
+			console.error("Login error:", err);
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	return (
-		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col max-w-80">
-				<FormField
-					control={form.control}
-					name="username"
-					render={({ field }) => (
-						<FormItem className="gap-4 flex flex-col">
-							<FormLabel>Username</FormLabel>
-							<FormControl>
-								<Input placeholder="Enter your username" {...field} className="w-80 h-12 p-4 rounded-lg" />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={form.control}
-					name="email"
-					render={({ field }) => (
-						<FormItem className="gap-4 flex flex-col">
-							<FormLabel>Email</FormLabel>
-							<FormControl>
-								<Input placeholder="Enter your email" type="email" {...field} className="w-80 h-12 p-4 rounded-lg" />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={form.control}
-					name="password"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Password</FormLabel>
-							<FormControl>
-								<div className="relative w-80 mb-1.5">
-									<Input placeholder="Enter your password" type={showPassword ? "text" : "password"} {...field} className="h-12 p-4 pr-10 rounded-lg" />
-									<div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
-										{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+		<>
+			{isLoading && <LoadingScreen />}
+		
+			{isRegistered && <CheckEmailFullscreen />}
+
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col max-w-80">
+					<FormField
+						control={form.control}
+						name="username"
+						render={({ field }) => (
+							<FormItem className="gap-4 flex flex-col">
+								<FormLabel>Username</FormLabel>
+								<FormControl>
+									<Input placeholder="Enter your username" {...field} className="w-80 h-12 p-4 rounded-lg" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="email"
+						render={({ field }) => (
+							<FormItem className="gap-4 flex flex-col">
+								<FormLabel>Email</FormLabel>
+								<FormControl>
+									<Input placeholder="Enter your email" type="email" {...field} className="w-80 h-12 p-4 rounded-lg" />
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="password"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Password</FormLabel>
+								<FormControl>
+									<div className="relative w-80 mb-1.5">
+										<Input placeholder="Enter your password" type={showPassword ? "text" : "password"} {...field} className="h-12 p-4 pr-10 rounded-lg" />
+										<div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
+											{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+										</div>
 									</div>
-								</div>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={form.control}
-					name="passwordConfirmation"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Password Confirmation</FormLabel>
-							<FormControl>
-								<div className="relative w-80 mb-1.5">
-									<Input placeholder="Confirm your password" type={showPasswordConfirmation ? "text" : "password"} {...field} className="h-12 p-4 pr-10 rounded-lg" />
-									<div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setShowPasswordConfirmation((prev) => !prev)}>
-										{showPasswordConfirmation ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<FormField
+						control={form.control}
+						name="passwordConfirmation"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Password Confirmation</FormLabel>
+								<FormControl>
+									<div className="relative w-80 mb-1.5">
+										<Input placeholder="Confirm your password" type={showPasswordConfirmation ? "text" : "password"} {...field} className="h-12 p-4 pr-10 rounded-lg" />
+										<div className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground" onClick={() => setShowPasswordConfirmation((prev) => !prev)}>
+											{showPasswordConfirmation ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+										</div>
 									</div>
-								</div>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-				<Button type="submit" className="w-80 h-12 p-4 my-2 rounded-lg cursor-pointer">
-					Register
-				</Button>
-			</form>
-		</Form>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+					<Button type="submit" className="w-80 h-12 p-4 my-2 rounded-lg cursor-pointer">
+						Register
+					</Button>
+				</form>
+			</Form>
+		</>
 	);
 }

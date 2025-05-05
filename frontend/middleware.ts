@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BASE_URI, API_BASE_URL } from "@/lib/callApi";
+import { BASE_URI } from "@/lib/callApi";
 
 const publicPaths = [
     "/",
 	"/auth/login",
 	"/auth/register",
+	"/auth/2fa",
 	"/auth/forgot-password",
 ];
 
 export const config = {
 	matcher: [
-		"/((?!_next/|public/).*)",
+		// "/((?!_next/|public/).*)",
+		'/((?!_next/|public/|.*\\.(?:ico|png|jpg|jpeg|svg|css|js|json)).*)',
 	],
 };
 
@@ -32,7 +34,7 @@ export async function middleware(req: NextRequest) {
 	}
 
 	try {
-		const validateUrl = new URL(`${API_BASE_URL}/api/v1/auth/is-authenticated`, BASE_URI);
+		const validateUrl = new URL(`${BASE_URI}/api/v1/auth/is-authenticated`, BASE_URI);
 		const res = await fetch(validateUrl.toString(), {
 			method: "GET",
 			headers: {
