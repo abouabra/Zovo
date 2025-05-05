@@ -140,7 +140,7 @@ server:
     session:
       timeout: 604800 # 7 days
       cookie:
-        name: ZfSESSIONID
+        name: ZSESSIONID
         domain: localhost
         path: /
         max-age: 604800

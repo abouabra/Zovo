@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.dtos.*;
 import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.enums.RedisGroupAction;
@@ -29,6 +30,7 @@ import java.util.Map;
  * Endpoints are secured and return {@code ResponseEntity} objects containing
  * appropriate {@code ApiResponse} details in the response.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @AllArgsConstructor
@@ -36,6 +38,13 @@ public class AuthController {
     private AuthService authService;
     private RedisRateLimitingService redisRateLimitingService;
     private OAuth2Service oAuth2Service;
+
+    @GetMapping("/is-authenticated")
+    public ResponseEntity<? extends ApiResponse<?>> isAuthenticated(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return loggedInUser == null
+                ? ApiResponse.failure(ApiCode.UNAUTHORIZED, "User not authenticated")
+                : ApiResponse.success("User is authenticated");
+    }
 
     /**
      * Handles user registration by processing the provided registration details.

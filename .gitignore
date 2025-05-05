@@ -185,3 +185,5 @@ sketch
 
 coverage/
 volumes/*
+
+certs/
