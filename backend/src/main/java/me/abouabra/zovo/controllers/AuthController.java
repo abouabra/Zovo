@@ -121,13 +121,21 @@ public class AuthController {
 
 
     /**
-     * Confirms a user's email using a provided verification token.
+     * Confirms the user's email address using the provided token.
      *
-     * @param token the email verification token
-     * @return a ResponseEntity containing an ApiResponse with the email confirmation result
+     * <p>This endpoint is protected against rate limiting and ensures the token
+     * is valid and processed securely.</p>
+     *
+     * @param body A map containing the "token" parameter.
+     * @param request The HTTP servlet request, used for accessing client details.
+     * @return A {@link ResponseEntity} wrapping an {@link ApiResponse}, indicating success or failure.
      */
-    @GetMapping("/confirm-email")
-    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestParam("token") String token, HttpServletRequest request) {
+    @PostMapping("/confirm-email")
+    public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        log.error("confirmEmail: {}", body);
+        String token = body.get("token");
+        if (token == null || token.isEmpty())
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing token parameter");
         return redisRateLimitingService.wrap(
                 RedisGroupAction.AUTH,
                 request.getRemoteAddr(),
@@ -137,15 +145,17 @@ public class AuthController {
 
 
     /**
-     * Sends a password-reset verification token to the specified email address.
-     * <p>
-     * This operation is performed only if the email belongs to an active user.
+     * Handles the request to send a password reset verification token to the user's email.
      *
-     * @param email The email address of the user requesting a password reset.
-     * @return A ResponseEntity containing an ApiResponse indicating the success or failure of the operation.
+     * @param body A map containing the "email" key with the user's email address as its value.
+     * @param request The HTTP servlet request object, used for retrieving client details.
+     * @return A {@link ResponseEntity} containing an {@link ApiResponse} indicating success or failure of the operation.
      */
-    @GetMapping("/send-password-reset")
-    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(@RequestParam("email") String email, HttpServletRequest request) {
+    @PostMapping("/send-password-reset")
+    public ResponseEntity<? extends ApiResponse<?>> sendVerifyPasswordResetToken(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        String email = body.get("email");
+        if (email == null || email.isEmpty())
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing email parameter");
         return redisRateLimitingService.wrap(
                 RedisGroupAction.AUTH,
                 request.getRemoteAddr(),
@@ -153,23 +163,24 @@ public class AuthController {
         );
     }
 
-
     /**
      * Verifies the validity of a password reset token.
      *
-     * @param token the password reset token to be validated.
-     * @return a {@link ResponseEntity} containing an {@link ApiResponse} with
-     * the validation result, indicating success or failure.
+     * @param body A map containing the "token" key with the password reset token as its value.
+     * @param request The HTTP servlet request object containing client request details.
+     * @return A {@link ResponseEntity} containing the API response with the verification result.
      */
-    @GetMapping("/password-reset")
-    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestParam("token") String token, HttpServletRequest request) {
+    @PostMapping("/verify-password-reset-token")
+    public ResponseEntity<? extends ApiResponse<?>> verifyPasswordResetToken(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        String token = body.get("token");
+        if (token == null || token.isEmpty())
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing token parameter");
         return redisRateLimitingService.wrap(
                 RedisGroupAction.AUTH,
                 request.getRemoteAddr(),
                 () -> authService.verifyPasswordResetToken(token)
         );
     }
-
 
     /**
      * Processes a password reset request by validating the provided token and updating the password.
@@ -187,7 +198,6 @@ public class AuthController {
         );
     }
 
-
     /**
      * Generates a Two-Factor Authentication (2FA) QR code for the authenticated user.
      *
@@ -202,7 +212,6 @@ public class AuthController {
                 () -> authService.generate2FA(loggedInUser)
         );
     }
-
 
     /**
      * Enables Two-Factor Authentication (2FA) for the logged-in user.

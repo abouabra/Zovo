@@ -55,7 +55,7 @@ export default function LoginForm() {
 				useTwoFAStore.getState().setTwoFAData({
 					token: res.details.token,
 				});
-				router.push("/auth/2fa");
+				router.push("/auth/login-2fa");
 			} else {
 				console.log("Login successful");
 				router.push("/home");
@@ -72,7 +72,7 @@ export default function LoginForm() {
 			{isLoading && <LoadingScreen />}
 
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6 flex flex-col max-w-80">
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col max-w-80">
 					<FormField
 						control={form.control}
 						name="email"

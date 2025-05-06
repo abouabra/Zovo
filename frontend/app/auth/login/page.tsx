@@ -14,12 +14,12 @@ const LoginPage = () => {
 					<ZovoLogo className="w-2xs h-auto" />
 					<span className="text-headline4">Log in</span>
 				</div>
-				<div className="flex justify-center items-center gap-4">
+				<div className="flex justify-center items-center flex-col md:flex-row gap-4">
 					<LoginForm />
-					<div className="flex flex-col items-center justify-center gap-2">
-						<div className="bg-borders w-0.5 min-h-35" />
+					<div className="flex md:flex-col items-center justify-center gap-2">
+						<div className="bg-borders h-0.5 min-w-35  md:w-0.5 md:min-w-0.5 md:min-h-35" />
 						<span className="text-subtitle1">or</span>
-						<div className="bg-borders w-0.5 min-h-35" />
+						<div className="bg-borders h-0.5 min-w-35  md:w-0.5 md:min-w-0.5 md:min-h-35" />
 					</div>
 					<OAuthLogin />
 				</div>

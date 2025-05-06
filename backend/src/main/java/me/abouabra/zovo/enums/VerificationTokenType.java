@@ -56,29 +56,29 @@ public enum VerificationTokenType {
         switch (this) {
             case CONFIRM_EMAIL:
                 subject = "Confirm Your Email Address";
-                endpointURL = baseURL + "/api/v1/auth/confirm-email?token=" + UUIDToken;
+                endpointURL = baseURL + "/auth/confirm-email?token=" + UUIDToken;
                 variables.put("confirmationURL", endpointURL);
                 break;
             case PASSWORD_RESET:
                 subject = "Password Reset Request";
-                endpointURL = baseURL + "/api/v1/auth/password-reset?token=" + UUIDToken;
+                endpointURL = baseURL + "/auth/password-reset?token=" + UUIDToken;
                 variables.put("passwordResetURL", endpointURL);
                 break;
             case WELCOME_EMAIL:
                 subject = "Welcome to Our Platform";
-                endpointURL = baseURL + "/api/v1/auth/login";
+                endpointURL = baseURL + "/auth/login";
                 variables.put("loginURL", endpointURL);
                 break;
             case TWO_FACTOR_AUTH_ENABLED:
                 subject = "2FA Has Been Activated";
-                endpointURL = baseURL + "/api/v1/auth/login";
+                endpointURL = baseURL + "/auth/login";
                 variables.put("loginURL", endpointURL);
                 variables.put("title", "2FA Has Been Activated.");
                 variables.put("description", "Two-factor authentication has been enabled for your account. This adds an extra layer of security by requiring both your password and a verification code when logging in.");
                 break;
             case TWO_FACTOR_AUTH_DISABLED:
                 subject = "2FA Has Been Disabled";
-                endpointURL = baseURL + "/api/v1/auth/login";
+                endpointURL = baseURL + "/auth/login";
                 variables.put("loginURL", endpointURL);
                 variables.put("title", "2FA Has Been Disabled.");
                 variables.put("description", "Two-factor authentication has been disabled for your account. You will now log in using only your password.");

@@ -1,5 +1,4 @@
 "use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -7,18 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { callApi } from "@/lib/callApi";
 import LoadingScreen from "@/components/loading-screen";
+import { Eye, EyeOff } from "lucide-react";
 
 const FormSchema = z
 	.object({
-		username: z.string().min(4, {
-			message: "Username must be at least 4 characters long.",
-		}),
-		email: z.string().email({
-			message: "Please enter a valid email address.",
-		}),
 		password: z.string().regex(/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{8,}$/, {
 			message: "Password must contain at least one number, one lowercase letter, one uppercase letter, and be at least 8 characters long.",
 		}),
@@ -32,10 +25,11 @@ const FormSchema = z
 	});
 
 interface RegisterFormProps {
-	setIsEmailSent: (isRegistered: boolean) => void;
+	token: string;
+	setIsPasswordChanged: (isPasswordChanged: boolean) => void;
 }
 
-export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps) {
+const PasswordResetForm = ({ token, setIsPasswordChanged }: RegisterFormProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [showPassword, setShowPassword] = useState<boolean>(false);
 	const [showPasswordConfirmation, setShowPasswordConfirmation] = useState<boolean>(false);
@@ -43,8 +37,6 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
-			username: "",
-			email: "",
 			password: "",
 			passwordConfirmation: "",
 		},
@@ -55,18 +47,17 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 			setIsLoading(true);
 
 			console.log("Form submitted:", data);
-			const res = await callApi("/auth/register", {
+			const res = await callApi("/auth/password-reset", {
 				method: "POST",
 				body: JSON.stringify({
-					username: data.username,
-					email: data.email,
 					password: data.password,
 					passwordConfirmation: data.passwordConfirmation,
+					token,
 				}),
 			});
 			if (res.code === "SUCCESS") {
 				console.log("Register successful: ", res);
-				setIsEmailSent(true);
+				setIsPasswordChanged(true);
 			}
 		} catch (err) {
 			console.error("Login error:", err);
@@ -78,36 +69,10 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 	return (
 		<>
 			{isLoading && <LoadingScreen />}
-		
+
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 flex flex-col max-w-80">
-					<FormField
-						control={form.control}
-						name="username"
-						render={({ field }) => (
-							<FormItem className="gap-4 flex flex-col">
-								<FormLabel>Username</FormLabel>
-								<FormControl>
-									<Input placeholder="Enter your username" {...field} className="w-80 h-12 p-4 rounded-lg" />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
-						control={form.control}
-						name="email"
-						render={({ field }) => (
-							<FormItem className="gap-4 flex flex-col">
-								<FormLabel>Email</FormLabel>
-								<FormControl>
-									<Input placeholder="Enter your email" type="email" {...field} className="w-80 h-12 p-4 rounded-lg" />
-								</FormControl>
-								<FormMessage />
-							</FormItem>
-						)}
-					/>
-					<FormField
+				<FormField
 						control={form.control}
 						name="password"
 						render={({ field }) => (
@@ -144,10 +109,12 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 						)}
 					/>
 					<Button type="submit" className="w-80 h-12 p-4 my-2 rounded-lg cursor-pointer">
-						Register
+						Reset Password
 					</Button>
 				</form>
 			</Form>
 		</>
 	);
-}
+};
+
+export default PasswordResetForm;

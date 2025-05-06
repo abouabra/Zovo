@@ -109,7 +109,9 @@ const TwoFaOtpInput = () => {
 						<span className="text-sm">{useRecoveryCode ? "Use One-Time Password" : "Use Recovery Code"}</span>
 					</div>
 
-					<Button type="submit">Submit</Button>
+					<Button type="submit" className="w-full h-12 p-4 my-2 rounded-lg cursor-pointer">
+						Submit
+					</Button>					
 				</form>
 			</Form>
 		</>
