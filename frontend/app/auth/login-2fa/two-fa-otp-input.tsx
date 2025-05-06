@@ -13,6 +13,8 @@ import { useTwoFAStore } from "@/stores/use2FAStore";
 import { callApi } from "@/lib/callApi";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/loading-screen";
+import { useUserStore } from "@/stores/useUserStore";
+import { UserResponse } from "@/app/auth/login/login-form";
 
 const OTP_SCHEMA = z.object({
 	code: z
@@ -49,7 +51,7 @@ const TwoFaOtpInput = () => {
 		try {
 			setIsLoading(true);
 			console.log("Form submitted:", data);
-			const res = await callApi("/auth/login-2fa", {
+			const res = await callApi<UserResponse>("/auth/login-2fa", {
 				method: "POST",
 				body: JSON.stringify({
 					token: token,
@@ -59,8 +61,13 @@ const TwoFaOtpInput = () => {
 			if (res.code === "SUCCESS") {
 				console.log("2FA login successful:", res);
 				useTwoFAStore.getState().clear();
+				const user = res.details as UserResponse;
+				useUserStore.getState().setUserData({
+					id: user.id,
+					username: user.username,
+					email: user.email,
+				});
 				router.push("/home");
-			} else {
 			}
 		} catch (err) {
 			console.error("Login error:", err);
@@ -111,7 +118,7 @@ const TwoFaOtpInput = () => {
 
 					<Button type="submit" className="w-full h-12 p-4 my-2 rounded-lg cursor-pointer">
 						Submit
-					</Button>					
+					</Button>
 				</form>
 			</Form>
 		</>

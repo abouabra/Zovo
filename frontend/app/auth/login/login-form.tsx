@@ -10,11 +10,18 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LoadingScreen from "@/components/loading-screen";
-import { useTwoFAStore } from '@/stores/use2FAStore';
+import { useTwoFAStore } from "@/stores/use2FAStore";
+import { useUserStore } from "@/stores/useUserStore";
 
 interface TwoFaResponse {
 	token: string;
 	provider: string;
+}
+
+export interface UserResponse {
+	id: number;
+	username: string;
+	email: string;
 }
 
 const FormSchema = z.object({
@@ -43,21 +50,25 @@ export default function LoginForm() {
 		try {
 			setIsLoading(true);
 
-			const res = await callApi<TwoFaResponse>("/auth/login", {
+			const res = await callApi<TwoFaResponse | UserResponse>("/auth/login", {
 				method: "POST",
 				body: JSON.stringify({
 					email: data.email,
 					password: data.password,
 				}),
 			});
-			if (res.code === "LOGIN_NEEDS_2FA" && res.details) {
-				console.log("2FA required: ", res );
-				useTwoFAStore.getState().setTwoFAData({
-					token: res.details.token,
-				});
+			console.log("Login response:", res);
+			if (res.code == "LOGIN_NEEDS_2FA") {
+				const twoFA = res.details as TwoFaResponse;
+				useTwoFAStore.getState().setTwoFAData({ token: twoFA.token });
 				router.push("/auth/login-2fa");
 			} else {
-				console.log("Login successful");
+				const user = res.details as UserResponse;
+				useUserStore.getState().setUserData({
+					id: user.id,
+					username: user.username,
+					email: user.email,
+				});
 				router.push("/home");
 			}
 		} catch (err) {

@@ -17,7 +17,7 @@ app:
       window-seconds: 900  # 15 minutes
 
   oauth2:
-    redirect-prefix: "http://localhost:3000/oauth/callback"
+    redirect-prefix: "http://localhost/auth/oauth-callback"
 
   security:
     bcrypt:

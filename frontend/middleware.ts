@@ -5,8 +5,12 @@ const publicPaths = [
     "/",
 	"/auth/login",
 	"/auth/register",
-	"/auth/2fa",
+	"/auth/login-2fa",
+	"/auth/confirm-email",
 	"/auth/forgot-password",
+	"/auth/reset-password",
+	"/auth/oauth-callback/2fa",
+	"/auth/oauth-callback/success",
 ];
 
 export const config = {
