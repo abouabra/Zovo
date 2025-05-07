@@ -4,24 +4,15 @@ import { ArrowLeft, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import MenuIconMenu from "./search/menu-icon";
-import { useChatStore } from "@/stores/useChatStore";
+import ChannelsList from "./sidebar/channels-list";
 
 const SideBar = () => {
 	const [searchValue, setSearchValue] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
 	const [isGlobalSearchSeeAll, setIsGlobalSearchSeeAll] = useState(false);
 	const [isMessagesSeeAll, setIsMessagesSeeAll] = useState(false);
-	const { setChatData } = useChatStore();
 	const inputRef = useRef<HTMLInputElement>(null);
-	
-  const randomChats = Array.from({ length: 30 }, () => ({
-		text: Math.random()
-			.toString(36)
-			.substring(2, 15)
-			.toUpperCase()
-			.repeat(Math.floor(Math.random() * 2) + 1),
-		id: Math.floor(Math.random() * 1000),
-	}));
+
 
 	useEffect(() => {
 		// handle the escape key to close the search
@@ -93,13 +84,8 @@ const SideBar = () => {
 					</div>
 				</div>
 
-				{/* Chat List Panel */}
-				<div className={cn("absolute inset-0 flex flex-col items-center overflow-auto transition-opacity duration-300 ease-in-out", isSearchActive ? "opacity-0 pointer-events-none" : "opacity-100")}>
-					{Array.from({ length: 20 }, (_, i) => (
-						<div key={i} className="w-full h-16 min-h-16 p-4 border bg-blue-700 mb-2 cursor-pointer" onClick={() => setChatData({ id: randomChats[i].id })}>
-							<span className="font-bold">{randomChats[i].text}</span>
-						</div>
-					))}
+				<div className={cn("absolute inset-0 overflow-auto transition-opacity duration-300 ease-in-out", isSearchActive ? "opacity-0 pointer-events-none" : "opacity-100")}>
+					<ChannelsList />
 				</div>
 			</div>
 		</div>
