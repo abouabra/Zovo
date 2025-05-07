@@ -185,9 +185,8 @@ public class AuthService {
     public ResponseEntity<? extends ApiResponse<?>> logout(HttpServletRequest request, HttpServletResponse response) {
         HttpSession session = request.getSession(false);
 
-        if (session == null) {
+        if (session == null)
             return ApiResponse.failure(ApiCode.BAD_REQUEST, "User is not logged in");
-        }
 
         response.addCookie(sessionProperties.createExpiredSessionCookie(session.getId()));
         session.invalidate();

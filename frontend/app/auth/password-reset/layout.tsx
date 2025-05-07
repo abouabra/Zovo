@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Register",
+	title: "Password Reset",
 	description: "Messaging app for the modern world",
 };
 
-export default function RegisterLayout({ children }: { children: React.ReactNode }) {
+export default function PasswordResetLayout({ children }: { children: React.ReactNode }) {
 	return <>{children}</>;
 }

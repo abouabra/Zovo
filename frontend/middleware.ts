@@ -1,32 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BASE_URI } from "@/lib/callApi";
 
-const publicPaths = [
-    "/",
-	"/auth/login",
-	"/auth/register",
-	"/auth/login-2fa",
-	"/auth/confirm-email",
-	"/auth/forgot-password",
-	"/auth/reset-password",
-	"/auth/oauth-callback/2fa",
-	"/auth/oauth-callback/success",
-];
 
 export const config = {
 	matcher: [
-		// "/((?!_next/|public/).*)",
 		'/((?!_next/|public/|.*\\.(?:ico|png|jpg|jpeg|svg|css|js|json)).*)',
 	],
+};
+
+
+const isPublicPath = (pathname: string): boolean => {
+	return (
+		pathname === "/" ||
+		pathname.startsWith("/auth")
+	);
 };
 
 export async function middleware(req: NextRequest) {
 	const pathname = req.nextUrl.pathname;
 
-	if (publicPaths.some((path) => pathname === path || pathname.startsWith(path + "/"))) {
-		console.log("Public path, no authentication required:", pathname);
+	if (isPublicPath(pathname))
 		return NextResponse.next();
-	}
 
 	console.log("Protected path, checking authentication:", pathname);
 
@@ -48,15 +42,12 @@ export async function middleware(req: NextRequest) {
 		});
 
 		if (!res.ok) {
-			console.log("Authentication failed, redirecting to login");
 			const loginUrl = req.nextUrl.clone();
 			loginUrl.pathname = "/auth/login";
 			return NextResponse.redirect(loginUrl);
 		}
-		console.log("Authentication successful, proceeding to:", pathname);
 		return NextResponse.next();
-	} catch (error) {
-		console.error("Authentication error:", error);
+	} catch {
 		const loginUrl = req.nextUrl.clone();
 		loginUrl.pathname = "/auth/login";
 		return NextResponse.redirect(loginUrl);

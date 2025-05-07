@@ -4,6 +4,12 @@ import ZovoLogo from "@/components/svgs/ZovoLogo";
 import LoginForm from "./login-form";
 import OAuthLogin from "./oauth-login";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const generateMetadata = (): Metadata => ({
+	title: "Login",
+	description: "Messaging app for the modern world",
+});
 
 const LoginPage = () => {
 	return (

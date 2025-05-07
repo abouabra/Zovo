@@ -2,6 +2,13 @@ import React from "react";
 import AuthHeader from "@/components/auth/auth-header";
 import ZovoLogo from "@/components/svgs/ZovoLogo";
 import TwoFaOtpInput from "./two-fa-otp-input";
+import { Metadata } from "next";
+
+export const generateMetadata = (): Metadata => ({
+	title: "Two Factor Authentication",
+	description: "Messaging app for the modern world",
+});
+
 
 const TwoFaPage = () => {
 	return (

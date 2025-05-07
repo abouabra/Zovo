@@ -18,7 +18,7 @@ const RegisterPage = () => {
 					<div className="flex flex-col items-center pt-32">
 						<span className="text-4xl font-bold">We&apos;ve sent you an email to reset your password</span>
 						<span className="text-2xl text-muted-foreground">Please check your inbox and follow the instructions to reset your password.</span>
-                        <span className="text-2xl text-muted-foreground">If you don&apos;t see the email, check your spam folder.</span>
+						<span className="text-2xl text-muted-foreground">If you don&apos;t see the email, check your spam folder.</span>
 					</div>
 				) : (
 					<div className="flex justify-center items-center gap-4 flex-col md:flex-row relative pt-32">

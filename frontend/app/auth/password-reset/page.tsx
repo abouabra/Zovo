@@ -10,6 +10,7 @@ import ZovoLogo from "@/components/svgs/ZovoLogo";
 import LoadingScreen from "@/components/loading-screen";
 import PasswordResetForm from "./password-reset-form";
 
+
 const PasswordResetPage = () => {
 	const searchParams = useSearchParams();
 	const token = searchParams.get("token");

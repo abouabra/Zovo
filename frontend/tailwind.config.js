@@ -108,9 +108,20 @@ const tailwindConfig = {
           "0%,70%,100%": { opacity: "1" },
           "20%,50%": { opacity: "0" },
         },
+        rotateFade: {
+          '0%':   { transform: 'rotate(180deg)',   opacity: '0' },
+          '50%':  { transform: 'rotate(90deg)',  opacity: '0.5' },
+          '100%': { transform: 'rotate(0deg)', opacity: '1' },
+        },
+        zoomOutFade: {
+          '0%':   { transform: 'scale(1)',   opacity: '1' },
+          '100%': { transform: 'scale(0.9)', opacity: '0' },
+        },
       },
       animation: {
         "caret-blink": "caret-blink 1.25s ease-out infinite",
+        'rotate-fade': 'rotateFade 0.2s ease-in-out',
+        'zoom-out-fade': 'zoomOutFade 0.2s ease-in-out',
       },
 		},
 	},
