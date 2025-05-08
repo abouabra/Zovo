@@ -5,12 +5,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "next-themes";
+import { useUserStore } from "@/stores/useUserStore";
 
 const MenuIconMenu = () => {
 	const { theme, setTheme } = useTheme();
+	const { user } = useUserStore();
 	const handleThemeChange = (checked: boolean) => {
 		setTheme(checked ? "dark" : "light");
 	};
+
+	if (!user) return null;
 
 	return (
 		<Popover>
@@ -34,10 +38,10 @@ const MenuIconMenu = () => {
 
 					<div className="flex w-full gap-4 items-center cursor-pointer p-4 border-b hover:bg-borders/75">
 						<Avatar className="w-6 h-6">
-							<AvatarImage src="https://github.com/shadcn.png" />
-							<AvatarFallback>CN</AvatarFallback>
+							<AvatarImage src={user.avatar} />
+							<AvatarFallback>{user.username}</AvatarFallback>
 						</Avatar>
-						<span className="font-bold select-none">UserXXXX</span>
+						<span className="font-bold select-none">{user.username}</span>
 					</div>
 				</div>
 			</PopoverContent>
@@ -46,3 +50,4 @@ const MenuIconMenu = () => {
 };
 
 export default MenuIconMenu;
+

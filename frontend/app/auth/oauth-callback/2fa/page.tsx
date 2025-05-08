@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTwoFAStore } from "@/stores/use2FAStore";
 import { useRouter } from "next/navigation";
@@ -9,16 +9,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 const OAuth2FaCallback = () => {
+	const {setTwoFAData} = useTwoFAStore();
 	const searchParams = useSearchParams();
 	const token = searchParams.get("token");
 	const router = useRouter();
 
-	if (token) {
-		useTwoFAStore.getState().setTwoFAData({
-			token: token,
-		});
-		router.push("/auth/login-2fa");
-	}
+	useEffect(() => {
+		if (token) {
+			setTwoFAData({
+				token: token,
+			});
+			router.push("/auth/login-2fa");
+		}
+	}, [token, router, setTwoFAData]);
 	return (
 		<div className="flex flex-col min-h-screen h-screen app-bg">
 			<AuthHeader description="Already have an account?" link="/auth/login" />

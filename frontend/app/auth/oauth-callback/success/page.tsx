@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/auth/auth-header";
@@ -7,8 +7,10 @@ import ZovoLogo from "@/components/svgs/ZovoLogo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/stores/useUserStore";
+import { UserType } from "@/constants/user-type";
 
 const OAuthSuccessCallback = () => {
+    const {setUserData} = useUserStore();
     const searchParams = useSearchParams();
     const id = searchParams.get("id");
     const username = searchParams.get("username");
@@ -16,15 +18,18 @@ const OAuthSuccessCallback = () => {
 
     const router = useRouter();
     const isValid = id && username && email;
-
-    if (isValid) {
-        useUserStore.getState().setUserData({
-            id: parseInt(id),
-            username: username,
-            email: email,
-        });
-        router.push("/home");
-    }
+    useEffect(() => {
+        if (isValid) {
+            const loggedInUser: UserType = {
+            id: parseInt(id as string),
+            username: username as string,
+            email: email as string,
+            avatar: "https://github.com/shadcn.png" as string,
+            };
+            setUserData(loggedInUser);
+            router.push("/home");
+        }
+    }, [isValid, id, username, email, setUserData, router]);
 
     return (
         <div className="flex flex-col min-h-screen h-screen app-bg">

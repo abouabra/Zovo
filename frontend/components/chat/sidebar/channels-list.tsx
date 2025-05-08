@@ -1,7 +1,10 @@
-import React, { useState } from "react";
-import ChannelItem, { Channel } from "./channel";
+"use client";
+import React, { useEffect } from "react";
+import ChannelItem from "./channel";
+import { useChannelsSidebarStore } from "@/stores/useChannelsSidebarStore";
+import { ChannelType } from "@/constants/channel-type";
 
-const fakeChannels: Channel[] = [
+const fakeChannels: ChannelType[] = [
 	{
 		id: "1",
 		type: "personal",
@@ -19,7 +22,6 @@ const fakeChannels: Channel[] = [
 		type: "group",
 		name: "Dev Team Chat",
 		avatar: "https://placehold.co/64x64?text=DT",
-		status: "",
 		unread: 5,
 		lastMessage: {
 			content: "Don't forget the deployment. Don't forget the deployment. Don't forget the deployment. Don't forget the deployment. Don't forget the deployment. Don't forget the deployment. Don't forget the deployment.",
@@ -43,7 +45,6 @@ const fakeChannels: Channel[] = [
 		type: "group",
 		name: "Marketing",
 		avatar: "https://placehold.co/64x64?text=MKT",
-		status: "",
 		unread: 1,
 		lastMessage: {
 			content: "Meeting rescheduled.",
@@ -67,7 +68,6 @@ const fakeChannels: Channel[] = [
 		type: "group",
 		name: "Book Club",
 		avatar: "https://placehold.co/64x64?text=BC",
-		status: "",
 		unread: 0,
 		lastMessage: {
 			content: "Next chapter is amazing!",
@@ -91,7 +91,6 @@ const fakeChannels: Channel[] = [
 		type: "group",
 		name: "Weekend Trip",
 		avatar: "https://placehold.co/64x64?text=WT",
-		status: "",
 		unread: 2,
 		lastMessage: {
 			content: "Who's bringing snacks?",
@@ -115,7 +114,6 @@ const fakeChannels: Channel[] = [
 		type: "group",
 		name: "Hackathon Team",
 		avatar: "https://placehold.co/64x64?text=HT",
-		status: "",
 		unread: 4,
 		lastMessage: {
 			content: "Code freeze at midnight!",
@@ -125,12 +123,15 @@ const fakeChannels: Channel[] = [
 ];
 
 const ChannelsList = () => {
-	const [activeId, setActiveId] = useState<string | null>(null);
+  const {channels, setChannels} = useChannelsSidebarStore();
+  useEffect(() => {
+    setChannels(fakeChannels);
+  }, [setChannels]);
 
 	return (
 		<div className="w-full h-full max-w-4xl flex flex-col overflow-auto">
-			{fakeChannels.map((ch) => (
-				<ChannelItem key={ch.id} channel={ch} isActive={ch.id === activeId} onClick={() => setActiveId(ch.id)} />
+			{channels.map((ch) => (
+				<ChannelItem key={ch.id} channel={ch}/>
 			))}
 		</div>
 	);

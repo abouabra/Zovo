@@ -37,7 +37,7 @@ export default function LoginForm() {
 	const [showPassword, setShowPassword] = useState<boolean>(false);
 	const router = useRouter();
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-
+	const { setUserData } = useUserStore();
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
@@ -64,10 +64,11 @@ export default function LoginForm() {
 				router.push("/auth/login-2fa");
 			} else {
 				const user = res.details as UserResponse;
-				useUserStore.getState().setUserData({
+				setUserData({
 					id: user.id,
 					username: user.username,
 					email: user.email,
+					avatar: "https://github.com/shadcn.png",
 				});
 				router.push("/home");
 			}

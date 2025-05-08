@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import AppBackground from "@/components/app-background";
+import StoreInitializer from "@/components/store-initializer";
 
 const roboto = Roboto({
 	variable: "--font-roboto",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 				<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
 					<AppBackground>
 						{children}
+						<StoreInitializer />
 						<Toaster />
 					</AppBackground>
 				</ThemeProvider>

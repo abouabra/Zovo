@@ -1,10 +1,10 @@
 "use client";
-import { useChatStore } from "@/stores/useChatStore";
 import { useEffect, useState } from "react";
 import SideBar from "@/components/chat/side-bar";
+import { useChannelsSidebarStore } from "@/stores/useChannelsSidebarStore";
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
-	const { isChatOpen } = useChatStore();
+	const {activeChannelId} = useChannelsSidebarStore();
 
 	const [isMobile, setIsMobile] = useState(false);
 
@@ -20,9 +20,8 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
 
 	return (
 		<div className="flex w-full h-full transform transition-transform duration-300 ease-in-out">
-
-			{(!isMobile || !isChatOpen) && <SideBar />}
-			{(!isMobile || isChatOpen) && children}
+			{(!isMobile || !activeChannelId) && <SideBar />}
+			{(!isMobile || activeChannelId) && children}
 		</div>
 	);
 }

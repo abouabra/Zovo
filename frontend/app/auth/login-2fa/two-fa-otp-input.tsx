@@ -39,7 +39,7 @@ const TwoFaOtpInput = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const { token } = useTwoFAStore();
 	const router = useRouter();
-
+	const { setUserData } = useUserStore();
 	const form = useForm<z.infer<typeof OTP_SCHEMA | typeof RECOVERY_SCHEMA>>({
 		resolver: zodResolver(useRecoveryCode ? RECOVERY_SCHEMA : OTP_SCHEMA),
 		defaultValues: {
@@ -62,10 +62,11 @@ const TwoFaOtpInput = () => {
 				console.log("2FA login successful:", res);
 				useTwoFAStore.getState().clear();
 				const user = res.details as UserResponse;
-				useUserStore.getState().setUserData({
+				setUserData({
 					id: user.id,
 					username: user.username,
 					email: user.email,
+					avatar: "https://github.com/shadcn.png",
 				});
 				router.push("/home");
 			}
