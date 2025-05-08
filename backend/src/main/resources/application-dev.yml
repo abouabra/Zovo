@@ -152,6 +152,16 @@ server:
 # Logging Configuration
 logging:
   level:
-    root: INFO
-    org.springframework.security: TRACE
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    root: info
+#    org.springframework.security: TRACE
+#    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+
+
+storage:
+  endpoint: http://localhost:9000
+  access-key: ${MINIO_ROOT_USER}
+  secret-key: ${MINIO_ROOT_PASSWORD}
+  avatars:
+    bucket-name: user-avatars
+    max-file-size-in-megabytes: 10
+

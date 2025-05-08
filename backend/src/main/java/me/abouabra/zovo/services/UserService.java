@@ -9,6 +9,7 @@ import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
+import me.abouabra.zovo.services.storage.AvatarStorageService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authManager;
     private final CacheManager cacheManager;
+    private final AvatarStorageService avatarStorageService;
 
     @Transactional
     @Cacheable(value = "usersList", key = "'default'")
@@ -40,7 +42,7 @@ public class UserService {
         return userRepo
                 .findAll()
                 .stream()
-                .map(userMapper::toDTO)
+                .map(user -> userMapper.toDTO(user, avatarStorageService))
                 .toList();
     }
 
@@ -50,14 +52,14 @@ public class UserService {
 
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User with id '%d' was not found".formatted(userId)));
-        return userMapper.toDTO(user);
+        return userMapper.toDTO(user, avatarStorageService);
     }
 
     public ResponseEntity<? extends ApiResponse<?>> getLoggedInUserData(UserPrincipal loggedInUser) {
-        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser()));
+        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser(), avatarStorageService));
     }
 
     public ResponseEntity<? extends ApiResponse<?>> testAdminEligibility(UserPrincipal loggedInUser) {
-        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser()));
+        return ApiResponse.success(userMapper.toDTO(loggedInUser.getUser(), avatarStorageService));
     }
 }

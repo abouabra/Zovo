@@ -2,6 +2,7 @@
 import { useUserStore } from "@/stores/useUserStore";
 import React from "react";
 import LogoutBtn from "./logout-btn";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const AboutPage = () => {
 	const { user } = useUserStore();
@@ -14,6 +15,10 @@ const AboutPage = () => {
 				<span className="text-2xl">User ID: {user.id}</span>
 				<span className="text-2xl">Username: {user.username}</span>
 				<span className="text-2xl">Email: {user.email}</span>
+				<Avatar className="w-48 h-48 rounded-none">
+					<AvatarImage src={user.avatar} />
+					<AvatarFallback>{user.username}</AvatarFallback>
+				</Avatar>
 				<LogoutBtn />
 			</div>
 		</div>

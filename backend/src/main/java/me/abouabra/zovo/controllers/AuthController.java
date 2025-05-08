@@ -41,7 +41,7 @@ public class AuthController {
 
     @GetMapping("/is-authenticated")
     public ResponseEntity<? extends ApiResponse<?>> isAuthenticated(@AuthenticationPrincipal UserPrincipal loggedInUser) {
-        log.error("isAuthenticated: {}", loggedInUser == null);
+        log.warn("isAuthenticated: {}", loggedInUser == null);
         return loggedInUser == null
                 ? ApiResponse.failure(ApiCode.UNAUTHORIZED, "User not authenticated")
                 : ApiResponse.success("User is authenticated");
@@ -132,7 +132,6 @@ public class AuthController {
      */
     @PostMapping("/confirm-email")
     public ResponseEntity<? extends ApiResponse<?>> confirmEmail(@RequestBody Map<String, String> body, HttpServletRequest request) {
-        log.error("confirmEmail: {}", body);
         String token = body.get("token");
         if (token == null || token.isEmpty())
             return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing token parameter");

@@ -49,6 +49,9 @@ public class User implements Serializable {
     @JsonIgnore
     private  String password;
 
+    @Column(name = "avatar_key")
+    private String avatarKey;
+
     @Column(name = "\"createdAt\"",columnDefinition = "timestamptz", insertable = false, updatable = false)
     private ZonedDateTime createdAt;
 

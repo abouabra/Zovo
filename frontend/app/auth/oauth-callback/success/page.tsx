@@ -15,21 +15,22 @@ const OAuthSuccessCallback = () => {
     const id = searchParams.get("id");
     const username = searchParams.get("username");
     const email = searchParams.get("email");
+    const avatar = searchParams.get("avatar");
 
     const router = useRouter();
-    const isValid = id && username && email;
+    const isValid = id && username && email && avatar;
     useEffect(() => {
         if (isValid) {
             const loggedInUser: UserType = {
             id: parseInt(id as string),
             username: username as string,
             email: email as string,
-            avatar: "https://github.com/shadcn.png" as string,
+            avatar: avatar as string,
             };
             setUserData(loggedInUser);
             router.push("/home");
         }
-    }, [isValid, id, username, email, setUserData, router]);
+    }, [isValid, id, username, email, avatar, setUserData, router]);
 
     return (
         <div className="flex flex-col min-h-screen h-screen app-bg">

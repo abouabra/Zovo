@@ -42,7 +42,21 @@ services:
     env_file:
       - .env
     restart: always
-
+  
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
+    container_name: minio_container
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    env_file:
+      - .env
+    networks:
+      - backend_network
+    restart: always
 
 volumes:
   postgres_data:
@@ -57,6 +71,13 @@ volumes:
     driver_opts:
       type: none
       device: ./volumes/redis
+      o: bind
+  
+  minio-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/minio
       o: bind
 
 networks:

@@ -10,6 +10,7 @@ import me.abouabra.zovo.dtos.UserDTO;
 import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.mappers.UserMapper;
 import me.abouabra.zovo.models.OAuthConnection;
+import me.abouabra.zovo.models.Role;
 import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.OAuthConnectionRepository;
 import me.abouabra.zovo.repositories.RoleRepository;
@@ -17,7 +18,9 @@ import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.AuthService;
 import me.abouabra.zovo.services.redis.RedisStorageService;
+import me.abouabra.zovo.services.storage.AvatarStorageService;
 import me.abouabra.zovo.utils.ApiResponse;
+import me.abouabra.zovo.utils.AvatarGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -57,8 +60,8 @@ public class OAuth2Service {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final String oAuthRedirectPrefix;
-
-
+    private final AvatarStorageService avatarStorageService;
+    private final AvatarGenerator avatarGenerator;
     @Autowired
     public OAuth2Service(
             UserRepository userRepository,
@@ -68,7 +71,7 @@ public class OAuth2Service {
             SessionProperties sessionProperties, AuthService authService,
             List<OAuth2Provider> providers,
             PasswordEncoder passwordEncoder, UserMapper userMapper,
-            @Value("${app.oauth2.redirect-prefix}") String oAuthRedirectPrefix) {
+            @Value("${app.oauth2.redirect-prefix}") String oAuthRedirectPrefix, AvatarStorageService avatarStorageService, AvatarGenerator avatarGenerator) {
         this.userRepository = userRepository;
         this.oAuthConnectionRepository = oAuthConnectionRepository;
         this.roleRepository = roleRepository;
@@ -76,6 +79,8 @@ public class OAuth2Service {
         this.sessionProperties = sessionProperties;
         this.authService = authService;
         this.oAuthRedirectPrefix = oAuthRedirectPrefix;
+        this.avatarStorageService = avatarStorageService;
+        this.avatarGenerator = avatarGenerator;
         this.restTemplate = new RestTemplate();
         this.providers = providers;
         this.passwordEncoder = passwordEncoder;
@@ -161,7 +166,7 @@ public class OAuth2Service {
             HttpSession newSession = authService.createNewSession(request, context);
             response.addCookie(sessionProperties.createSessionCookie(newSession));
 
-            UserDTO userDTO = userMapper.toDTO(user);
+            UserDTO userDTO = userMapper.toDTO(user, avatarStorageService);
             Map<String, Object> userResponse = authService.getStringObjectMap(userDTO);
 
             return ApiResponse.redirect(String.format("%s/success", oAuthRedirectPrefix), userResponse);
@@ -258,7 +263,13 @@ public class OAuth2Service {
                         new RuntimeException("Role with the specified name was not found"));
                 redisStorageService.setRole(defaultRole, userRole);
             }
-            newUser.setRoles(Set.of(userRole));
+            Set<Role> roles = new HashSet<>();
+            roles.add(userRole);
+            newUser.setRoles(roles);
+
+            newUser = userRepository.save(newUser);
+            String avatarKey = avatarGenerator.createUserAvatar(newUser);
+            newUser.setAvatarKey(avatarKey);
 
             return userRepository.save(newUser);
         });

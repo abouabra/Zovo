@@ -22,7 +22,9 @@ import me.abouabra.zovo.repositories.RoleRepository;
 import me.abouabra.zovo.repositories.UserRepository;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.redis.RedisStorageService;
+import me.abouabra.zovo.services.storage.AvatarStorageService;
 import me.abouabra.zovo.utils.ApiResponse;
+import me.abouabra.zovo.utils.AvatarGenerator;
 import org.apache.commons.codec.binary.Base32;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -71,7 +73,8 @@ public class AuthService {
     private final VerificationTokenService verificationTokenService;
     private final RedisStorageService redisStorageService;
     private final SecretEncryptionService encryptionService;
-
+    private final AvatarStorageService avatarStorageService;
+    private final AvatarGenerator avatarGenerator;
     /**
      * Registers a new user and sends a verification email.
      * <p>
@@ -100,6 +103,10 @@ public class AuthService {
         CompletableFuture.runAsync(() -> {
             String UUIDToken = verificationTokenService.generateVerificationToken(user, VerificationTokenType.CONFIRM_EMAIL);
             emailService.sendMailAsync(user.getEmail(), VerificationTokenType.CONFIRM_EMAIL, UUIDToken);
+
+            String avatarKey = avatarGenerator.createUserAvatar(user);
+            user.setAvatarKey(avatarKey);
+            userRepo.save(user);
         });
 
         return ApiResponse.success("User has been registered successfully. Please check your email for verification link");
@@ -129,7 +136,7 @@ public class AuthService {
         HttpSession newSession = createNewSession(request, context);
         response.addCookie(sessionProperties.createSessionCookie(newSession));
 
-        UserDTO userDTO = userMapper.toDTO(userPrincipal.getUser());
+        UserDTO userDTO = userMapper.toDTO(userPrincipal.getUser(), avatarStorageService);
         return ApiResponse.success("Logged in successfully", userDTO);
     }
 
@@ -170,7 +177,7 @@ public class AuthService {
         SecurityContext context = createAndSetSecurityContext(authentication);
         HttpSession newSession = createNewSession(request, context);
         response.addCookie(sessionProperties.createSessionCookie(newSession));
-        UserDTO userDTO = userMapper.toDTO(user);
+        UserDTO userDTO = userMapper.toDTO(user, avatarStorageService);
 
         return ApiResponse.success("Logged in successfully", userDTO);
     }

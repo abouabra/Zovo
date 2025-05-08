@@ -22,6 +22,7 @@ export interface UserResponse {
 	id: number;
 	username: string;
 	email: string;
+	avatar: string;
 }
 
 const FormSchema = z.object({
@@ -68,7 +69,7 @@ export default function LoginForm() {
 					id: user.id,
 					username: user.username,
 					email: user.email,
-					avatar: "https://github.com/shadcn.png",
+					avatar: user.avatar,
 				});
 				router.push("/home");
 			}

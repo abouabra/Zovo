@@ -1,8 +1,11 @@
 package me.abouabra.zovo.dtos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import me.abouabra.zovo.services.storage.AvatarStorageService;
 
 import java.io.Serializable;
 import java.util.Locale;
@@ -25,6 +28,7 @@ public class UserDTO implements Serializable {
     private Long id;
     private String username;
     private String email;
+    private String avatar;
 
     public void setEmail(String email) {
         this.email = email == null ? null : email.toLowerCase(Locale.ROOT);

@@ -66,7 +66,7 @@ const TwoFaOtpInput = () => {
 					id: user.id,
 					username: user.username,
 					email: user.email,
-					avatar: "https://github.com/shadcn.png",
+					avatar: user.avatar,
 				});
 				router.push("/home");
 			}

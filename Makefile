@@ -5,7 +5,7 @@ all: build
 
 
 build:
-	@mkdir -p $(CURDIR)/volumes/postgres $(CURDIR)/volumes/redis
+	@mkdir -p $(CURDIR)/volumes/postgres $(CURDIR)/volumes/redis $(CURDIR)/volumes/minio
 	@docker compose -f docker-compose.yml up -d --build
 
 start:
