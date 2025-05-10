@@ -104,7 +104,7 @@ public class AuthService {
             String UUIDToken = verificationTokenService.generateVerificationToken(user, VerificationTokenType.CONFIRM_EMAIL);
             emailService.sendMailAsync(user.getEmail(), VerificationTokenType.CONFIRM_EMAIL, UUIDToken);
 
-            String avatarKey = avatarGenerator.createUserAvatar(user);
+            String avatarKey = avatarGenerator.createAvatar(user.getId().toString(), false);
             user.setAvatarKey(avatarKey);
             userRepo.save(user);
         });

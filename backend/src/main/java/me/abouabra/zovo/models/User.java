@@ -25,11 +25,10 @@ import java.util.Set;
  * </ul>
  */
 @Entity
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "username"),
         @UniqueConstraint(columnNames = "email")
@@ -55,6 +54,10 @@ public class User implements Serializable {
     @Column(name = "\"createdAt\"",columnDefinition = "timestamptz", insertable = false, updatable = false)
     private ZonedDateTime createdAt;
 
+    @Column(nullable = false)
+    private String status;
+
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "users_roles",
@@ -63,18 +66,23 @@ public class User implements Serializable {
     )
     private Set<Role> roles = new HashSet<>();
 
+    @JsonIgnore
     @Column(nullable = false, name = "\"isActive\"")
     private boolean isActive = false;
 
+    @JsonIgnore
     @Column(nullable = false, name = "\"isEnabled\"")
     private boolean isEnabled = false;
 
+    @JsonIgnore
     @Column(nullable = false, name = "two_fa_enabled")
     private boolean twoFactorEnabled;
 
+    @JsonIgnore
     @Column(name = "two_fa_secret")
     private String twoFactorSecret;
 
+    @JsonIgnore
     @Column(name = "two_fa_recovery_codes")
     private String twoFactorRecoveryCodes;
 }

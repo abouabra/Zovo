@@ -1,0 +1,36 @@
+package me.abouabra.zovo.controllers;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.abouabra.zovo.security.UserPrincipal;
+import me.abouabra.zovo.services.chat.ChatService;
+import me.abouabra.zovo.utils.ApiResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/v1/chat")
+@AllArgsConstructor
+public class ChatController {
+    private final ChatService chatService;
+
+    @GetMapping("/sidebar")
+    public ResponseEntity<? extends ApiResponse<?>> getSidebarData(@AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return chatService.getSidebarData(loggedInUser.getUser());
+    }
+
+    @GetMapping("/messages/{channelUUID}")
+    public ResponseEntity<? extends ApiResponse<?>> getChannelMessages(@AuthenticationPrincipal UserPrincipal loggedInUser, @PathVariable UUID channelUUID) {
+        return chatService.getChannelMessages(channelUUID, loggedInUser.getUser());
+    }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<? extends ApiResponse<?>> getSearchResult(@RequestParam String keyword, @AuthenticationPrincipal UserPrincipal loggedInUser) {
+        return chatService.getSearchResult(keyword, loggedInUser.getUser());
+    }
+}

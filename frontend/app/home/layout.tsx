@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import SideBar from "@/components/chat/side-bar";
+import SideBar from "@/components/chat/sidebar/side-bar";
 import { useChannelsSidebarStore } from "@/stores/useChannelsSidebarStore";
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {

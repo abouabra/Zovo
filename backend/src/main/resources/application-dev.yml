@@ -162,6 +162,6 @@ storage:
   access-key: ${MINIO_ROOT_USER}
   secret-key: ${MINIO_ROOT_PASSWORD}
   avatars:
-    bucket-name: user-avatars
+    bucket-name: avatars
     max-file-size-in-megabytes: 10
 

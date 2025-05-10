@@ -268,7 +268,7 @@ public class OAuth2Service {
             newUser.setRoles(roles);
 
             newUser = userRepository.save(newUser);
-            String avatarKey = avatarGenerator.createUserAvatar(newUser);
+            String avatarKey = avatarGenerator.createAvatar(newUser.getId().toString(), false);
             newUser.setAvatarKey(avatarKey);
 
             return userRepository.save(newUser);

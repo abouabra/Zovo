@@ -7,6 +7,7 @@ import { ChannelType } from "@/constants/channel-type";
 
 interface ChannelProps {
 	channel: ChannelType;
+	isForSearch: boolean;
 }
 
 export const convertTimestampToAppropriateFormat = (timestamp: string) => {
@@ -27,7 +28,7 @@ export const convertTimestampToAppropriateFormat = (timestamp: string) => {
 	}
 };
 
-const ChannelItem = ({ channel }: ChannelProps) => {
+const ChannelItem = ({ channel, isForSearch }: ChannelProps) => {
 	const { activeChannelId, setActiveChannelId, addChannel } = useChannelsSidebarStore();
 
 	const handleChannelClick = () => {
@@ -58,7 +59,7 @@ const ChannelItem = ({ channel }: ChannelProps) => {
 							<span className="text-body2 min-w-[4rem] ml-auto text-right">{convertTimestampToAppropriateFormat(channel.lastMessage.timestamp)}</span>
 						</>
 					)}
-					{channel.members && <span className="text-body2">{channel.members} members</span>}
+					{channel.type == "group" && isForSearch == true &&  channel.members && <span className="text-body2">{channel.members} members</span>}
 				</div>
 			</div>
 		</div>
