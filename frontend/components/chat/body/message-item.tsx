@@ -24,15 +24,17 @@ const MessageItem = ({ message, showAvatar, showTimestamp }: MessageItemProps) =
 
 	return (
 		<div className={cn("flex gap-2", isMine ? "justify-end" : "justify-start")}>
-			{!isMine && showAvatar && (
+			{!isMine && showAvatar ? (
 				<Avatar className="w-9 h-9">
 					<AvatarImage src={message.sender.avatar} />
 					<AvatarFallback>{message.sender.username[0]}</AvatarFallback>
 				</Avatar>
+			): (
+				<div className="w-9 h-9" />
 			)}
 
 			<div 
-                className={cn("flex flex-col gap-1 max-w-[75%]", isMine ? "items-end" : "items-start")}
+                className={cn("flex flex-col gap-1 max-w-[75%]", isMine ? "items-end" : "items-start" )}
                 onMouseEnter={() => {setIsHovered(true)}}
                 onMouseLeave={() => setIsHovered(false)}
             >

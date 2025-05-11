@@ -33,6 +33,6 @@ public class Message implements Serializable {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "timestamp", columnDefinition = "timestamptz", insertable = false, updatable = false)
+    @Column(name = "timestamp", columnDefinition = "timestamptz")
     private ZonedDateTime timestamp;
 }

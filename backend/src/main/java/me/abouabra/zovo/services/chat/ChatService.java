@@ -1,6 +1,9 @@
 package me.abouabra.zovo.services.chat;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import me.abouabra.zovo.dtos.MessageDTO;
+import me.abouabra.zovo.mappers.MessageMapper;
 import me.abouabra.zovo.models.Channel;
 import me.abouabra.zovo.models.Message;
 import me.abouabra.zovo.models.User;
@@ -13,10 +16,12 @@ import me.abouabra.zovo.utils.ApiResponse;
 import me.abouabra.zovo.utils.AvatarGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.naming.directory.SearchResult;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -24,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ChatService {
@@ -33,6 +39,8 @@ public class ChatService {
     private final AvatarStorageService avatarStorageService;
     private final AvatarGenerator avatarGenerator;
     private final ChannelMemberRepository channelMemberRepo;
+    private SimpMessagingTemplate messagingTemplate;
+    private MessageMapper messageMapper;
 
     @Transactional(readOnly = true)
     public ResponseEntity<? extends ApiResponse<?>> getSidebarData(User loggedInUser) {
@@ -101,6 +109,7 @@ public class ChatService {
                 message.getId(),
                 message.getContent(),
                 message.getTimestamp(),
+                channelUUID,
                 new ChannelMessage.Sender(
                         message.getSender().getId(),
                         message.getSender().getUsername(),
@@ -120,5 +129,29 @@ public class ChatService {
         List<SidebarChannel> searchList = getSidebarChannels(user, combined, null, null);
 
         return ApiResponse.success(searchList);
+    }
+
+    @Transactional
+    public void sendMessage(MessageDTO messageDTO) {
+        String destination = "/topic/channel." + messageDTO.getChannelId();
+        log.info("Received message: {}", messageDTO);
+        Message recievedMessage = messageMapper.toEntity(messageDTO);
+        recievedMessage.setTimestamp(ZonedDateTime.now());
+        recievedMessage = messageRepo.save(recievedMessage);
+
+        ChannelMessage channelMessage = new ChannelMessage(
+                recievedMessage.getId(),
+                recievedMessage.getContent(),
+                recievedMessage.getTimestamp(),
+                messageDTO.getChannelId(),
+                new ChannelMessage.Sender(
+                        recievedMessage.getSender().getId(),
+                        recievedMessage.getSender().getUsername(),
+                        avatarStorageService.getAvatarUrl(recievedMessage.getSender().getAvatarKey()),
+                        recievedMessage.getSender().getStatus()
+                )
+        );
+
+        messagingTemplate.convertAndSend(destination, channelMessage);
     }
 }

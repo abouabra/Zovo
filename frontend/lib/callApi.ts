@@ -1,7 +1,7 @@
 import { toast } from "sonner"
 
 // const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL as string;
-export const BASE_URI = "http://localhost" as string;
+export const BASE_URI = "https://localhost" as string;
 export const API_BASE_URL = "/api/v1" as string;
 
 export interface ApiResponse<T = unknown> {

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,6 +22,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.context.*;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 
 /**
@@ -37,7 +41,7 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**", "/favicon.ico"};
+    private static final String[] PUBLIC_ENDPOINTS = {"/api/v1/auth/**"};
     private static final String[] TWO_FACTOR_AUTH_ENDPOINTS = {"/api/v1/auth/2fa/**"};
     private static final String[] ADMIN_ACCESS_PATHS = {"/api/v1/admin/**"};
     private final UserPrincipalService userPrincipalService;
@@ -94,6 +98,8 @@ public class SecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                         .contentSecurityPolicy(csp -> csp.policyDirectives("script-src 'self'"))
                 )
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(authEntryPoint)
@@ -180,5 +186,4 @@ public class SecurityConfig {
     public HttpSessionRequestCache httpSessionRequestCache() {
         return new HttpSessionRequestCache();
     }
-
 }

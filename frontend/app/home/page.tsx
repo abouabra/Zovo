@@ -9,7 +9,6 @@ const HomePage = () => {
 	const {activeChannelId, getActiveChannel, setActiveChannelId} = useChannelsSidebarStore();
 
 	useEffect(() => {
-		// handle the escape key to close the search
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === "Escape") {
 				setActiveChannelId(null);

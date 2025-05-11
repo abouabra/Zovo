@@ -13,6 +13,7 @@ public class ChannelMessage {
     private UUID id;
     private String content;
     private ZonedDateTime timestamp;
+    private UUID channelId;
     private Sender sender;
 
 

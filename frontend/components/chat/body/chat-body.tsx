@@ -1,3 +1,5 @@
+"use client";
+
 import { MessageType } from "@/constants/message-type";
 import { callApi } from "@/lib/callApi";
 import { format, differenceInMinutes } from "date-fns";
@@ -6,6 +8,7 @@ import DateSeparator from "./date-separator";
 import MessageStack from "./message-stack";
 import ChatInput from "./chat-input";
 import { useMessagesStore } from "@/stores/useChannelMessagesStore";
+import { useChatSocket } from "@/hooks/useChatSocket";
 
 interface GroupedMessage {
 	date: string;
@@ -14,6 +17,53 @@ interface GroupedMessage {
 		items: MessageType[];
 	}[];
 }
+
+
+type ChatBodyProps = {
+	channelId: string;
+};
+
+const ChatBody = ({ channelId }: ChatBodyProps) => {
+	const { messages, setMessages, addMessage } = useMessagesStore();
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!channelId) return;
+		callApi<MessageType[]>(`/chat/messages/${channelId}`).then((res) => {
+			if (res.details) setMessages(res.details);
+		});
+	}, [channelId, setMessages]);
+
+	const { sendMessage } = useChatSocket(channelId, addMessage);
+
+	useEffect(() => {
+		containerRef.current?.scrollTo(0, containerRef.current.scrollHeight);
+	}, [messages]);
+
+	const groupedByDate = groupMessagesByDate(messages);
+
+	return (
+		<div className="flex flex-col w-full h-[calc(100%-4rem)]">
+			<div ref={containerRef} className="flex flex-col w-full overflow-auto flex-1 justify-center">
+				<div className="flex flex-col w-full max-w-4xl min-h-full mx-auto px-4">
+					<div className="flex flex-col justify-end space-y-4 py-2 mt-auto">
+						{groupedByDate.map((group) => (
+							<div key={group.date}>
+								<DateSeparator date={group.date} />
+								{group.messages.map((stack, idx) => (
+									<MessageStack key={idx} messages={stack.items} />
+								))}
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+			<div className="flex  w-full max-w-4xl mx-auto">
+				<ChatInput channelId={channelId} sendMessage={sendMessage} />
+			</div>
+		</div>
+	);
+};
 
 function groupMessagesByDate(messages: MessageType[]): GroupedMessage[] {
 	const grouped: Record<string, MessageType[]> = {};
@@ -47,50 +97,5 @@ function groupConsecutiveMessages(messages: MessageType[]) {
 
 	return groups;
 }
-
-type ChatBodyProps = {
-	channelId: string;
-};
-
-const ChatBody = ({ channelId }: ChatBodyProps) => {
-	const { messages, setMessages } = useMessagesStore();
-	const containerRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const getMessagesData = async () => {
-			const data = await callApi<MessageType[]>(`/chat/messages/${channelId}`);
-			if (data.details) setMessages(data.details);
-		};
-		getMessagesData();
-	}, [channelId, setMessages]);
-
-	useEffect(() => {
-		containerRef.current?.scrollTo(0, containerRef.current.scrollHeight);
-	}, [messages, setMessages]);
-
-	const groupedByDate = groupMessagesByDate(messages);
-
-	return (
-		<div className="flex flex-col w-full h-[calc(100%-4rem)]">
-			<div ref={containerRef} className="flex flex-col w-full overflow-auto flex-1 justify-center">
-				<div className="flex flex-col w-full max-w-4xl min-h-full mx-auto px-4">
-					<div className="flex flex-col justify-end space-y-4 py-2 mt-auto">
-						{groupedByDate.map((group) => (
-							<div key={group.date}>
-								<DateSeparator date={group.date} />
-								{group.messages.map((stack, idx) => (
-									<MessageStack key={idx} messages={stack.items} />
-								))}
-							</div>
-						))}
-					</div>
-				</div>
-			</div>
-			<div className="flex  w-full max-w-4xl mx-auto">
-				<ChatInput channelId={channelId} />
-			</div>
-		</div>
-	);
-};
 
 export default ChatBody;

@@ -1,33 +1,27 @@
 "use client";
+
 import { useState } from "react";
 import React from "react";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { SendHorizonalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMessagesStore } from "@/stores/useChannelMessagesStore";
-import { useUserStore } from "@/stores/useUserStore";
 
 interface ChatInputProps {
 	channelId: string;
+	sendMessage: (content: string) => void;
 }
 
-const ChatInput = ({ channelId }: ChatInputProps) => {
-	const { addMessage } = useMessagesStore();
-	const { user } = useUserStore();
+const ChatInput = ({ channelId , sendMessage}: ChatInputProps) => {
 	const [isTyping, setIsTyping] = useState(false);
 	const [message, setMessage] = useState("");
-	if (!user) return null;
 	const handleSendMessage = () => {
 		if (message.trim() == "") return;
+
 		console.log("Sending message:", message);
 		console.log("channelId:", channelId);
-		addMessage({
-			id: Date.now().toString(),
-			content: message,
-			sender: user,
-			timestamp: new Date().toISOString(),
-		});
+
+		sendMessage(message);
 		setMessage("");
 		setIsTyping(false);
 	};

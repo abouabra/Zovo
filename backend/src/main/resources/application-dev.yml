@@ -4,7 +4,7 @@
 app:
   name: Zovo
   port: 8080
-  base-url: "http://localhost"
+  base-url: "https://localhost"
 
   redis:
     cache:
@@ -17,7 +17,7 @@ app:
       window-seconds: 900  # 15 minutes
 
   oauth2:
-    redirect-prefix: "http://localhost/auth/oauth-callback"
+    redirect-prefix: "https://localhost/auth/oauth-callback"
 
   security:
     bcrypt:
@@ -144,7 +144,7 @@ server:
         domain: localhost
         path: /
         max-age: 604800
-        secure: false
+        secure: true
         http-only: true
         same-site: lax
       tracking-modes: cookie

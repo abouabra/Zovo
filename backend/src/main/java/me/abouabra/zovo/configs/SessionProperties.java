@@ -28,7 +28,7 @@ public class SessionProperties {
     private int maxAge = DEFAULT_MAX_AGE;
     private String path = "/";
     private boolean httpOnly = true;
-    private boolean secure = false; // TODO: enable when HTTPS is enabled
+    private boolean secure = true;
     private String domain;
     private SameSite sameSite = SameSite.LAX;
 

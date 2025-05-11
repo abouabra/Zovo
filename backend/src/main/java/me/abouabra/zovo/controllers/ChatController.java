@@ -2,10 +2,15 @@ package me.abouabra.zovo.controllers;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import me.abouabra.zovo.dtos.MessageDTO;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.chat.ChatService;
 import me.abouabra.zovo.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,5 +37,14 @@ public class ChatController {
     @GetMapping("/search")
     public ResponseEntity<? extends ApiResponse<?>> getSearchResult(@RequestParam String keyword, @AuthenticationPrincipal UserPrincipal loggedInUser) {
         return chatService.getSearchResult(keyword, loggedInUser.getUser());
+    }
+
+
+
+
+
+    @MessageMapping("/chat.sendMessage")
+    public void sendMessage(@Payload MessageDTO messageDTO) {
+        chatService.sendMessage(messageDTO);
     }
 }
