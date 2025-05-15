@@ -47,7 +47,7 @@ const ChannelItem = ({ channel, isForSearch }: ChannelProps) => {
 	return (
 		<div className={cn("flex gap-2 items-center w-full h-16 min-h-16 p-4 cursor-pointer select-none hover:bg-input-bg", activeChannelId == channel.id ? "bg-borders" : "bg-bars-bg")} onClick={handleChannelClick}>
 			<div className="w-12 h-12 relative">
-				{channel.status && <div className={cn("w-3 h-3 rounded-full absolute top-0.5 right-0.5 z-2 outline-4 outline-bars-bg", channel.status === "online" ? "bg-accent-info" : "bg-accent-error")} />}
+				{/* {channel.status && <div className={cn("w-3 h-3 rounded-full absolute top-0.5 right-0.5 z-2 outline-4 outline-bars-bg", channel.status === "online" ? "bg-accent-info" : "bg-accent-error")} />} */}
 				<Avatar className="w-12 h-12">
 					<AvatarImage src={channel.avatar} />
 					<AvatarFallback>{channel.name}</AvatarFallback>

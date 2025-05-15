@@ -3,6 +3,7 @@ package me.abouabra.zovo.controllers;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.dtos.MessageDTO;
+import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.security.UserPrincipal;
 import me.abouabra.zovo.services.chat.ChatService;
 import me.abouabra.zovo.utils.ApiResponse;
@@ -14,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -43,7 +45,13 @@ public class ChatController {
         return chatService.joinChannel(loggedInUser.getUser(), channelUUID);
     }
 
-
+    @PostMapping("/create")
+    public ResponseEntity<? extends ApiResponse<?>> createChannel(@AuthenticationPrincipal UserPrincipal loggedInUser, @RequestBody Map<String, String> body) {
+        log.error("createChannel: {}", body);
+        if (body == null || body.isEmpty() || !body.containsKey("name"))
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing channel name");
+        return chatService.createChannel(loggedInUser.getUser(), body.get("name"));
+    }
 
 
 

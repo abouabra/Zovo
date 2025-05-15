@@ -25,5 +25,6 @@ public interface ChannelRepository extends JpaRepository<Channel, UUID> {
     @EntityGraph(attributePaths = "members")
     List<Channel> findTop10ByTypeAndNameContainingIgnoreCase(String group, String keyword);
 
+    boolean existsByName(String name);
 }
 

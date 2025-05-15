@@ -135,6 +135,12 @@ public class UserService {
     public void updateUserSession(User user) {
         UserPrincipal updatedPrincipal = new UserPrincipal(user);
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (currentAuth == null) {
+            log.warn("No active authentication found for user: {}", user.getUsername());
+            return; // Exit early if no authentication exists
+        }
+
         Authentication newAuth = new UsernamePasswordAuthenticationToken(
                 updatedPrincipal,
                 currentAuth.getCredentials(),

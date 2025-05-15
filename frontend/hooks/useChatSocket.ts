@@ -15,7 +15,6 @@ export function useChatSocket(channelId: string, addMessage: (msg: MessageType) 
     const { user } = useUserStore();
 	useEffect(() => {
 		if (!channelId) return;
-
 		const socket = new SockJS("https://localhost/ws-chat");
 		const client = new Client({
 			webSocketFactory: () => socket as WebSocket,

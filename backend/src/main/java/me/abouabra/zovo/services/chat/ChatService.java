@@ -24,10 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.naming.directory.SearchResult;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -168,5 +165,26 @@ public class ChatService {
         channel.getMembers().add(user);
         channelRepo.save(channel);
         return ApiResponse.success("Channel joined");
+    }
+
+    public ResponseEntity<? extends ApiResponse<?>> createChannel(User user, String name) {
+        if(channelRepo.existsByName(name))
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "Channel name already exists");
+
+        Channel channel = new Channel(
+                null,
+                "group",
+                name,
+                avatarGenerator.createAvatar(name, true),
+                ZonedDateTime.now(),
+                Set.of(user)
+        );
+
+        channel = channelRepo.save(channel);
+        log.warn("Channel ID: {}", channel.getId());
+        return ApiResponse.success("Channel created", Map.of(
+                "id", channel.getId(),
+                "avatar", avatarStorageService.getAvatarUrl(channel.getAvatarKey())
+        ));
     }
 }
