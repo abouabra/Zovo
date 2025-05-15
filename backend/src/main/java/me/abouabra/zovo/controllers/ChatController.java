@@ -33,11 +33,23 @@ public class ChatController {
         return chatService.getChannelMessages(channelUUID, loggedInUser.getUser());
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<? extends ApiResponse<?>> getSearchResult(@RequestParam String keyword, @AuthenticationPrincipal UserPrincipal loggedInUser) {
         return chatService.getSearchResult(keyword, loggedInUser.getUser());
     }
+
+    @PostMapping("/join/{channelUUID}")
+    public ResponseEntity<? extends ApiResponse<?>> joinChannel(@AuthenticationPrincipal UserPrincipal loggedInUser, @PathVariable UUID channelUUID) {
+        return chatService.joinChannel(loggedInUser.getUser(), channelUUID);
+    }
+
+
+
+
+
+
+
+
 
 
 

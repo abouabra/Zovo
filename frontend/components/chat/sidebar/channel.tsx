@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useChannelsSidebarStore } from "@/stores/useChannelsSidebarStore";
 import { ChannelType } from "@/constants/channel-type";
-
+import { callApi } from "@/lib/callApi";
 
 interface ChannelProps {
 	channel: ChannelType;
@@ -31,13 +31,19 @@ export const convertTimestampToAppropriateFormat = (timestamp: string) => {
 const ChannelItem = ({ channel, isForSearch }: ChannelProps) => {
 	const { activeChannelId, setActiveChannelId, addChannel } = useChannelsSidebarStore();
 
+	const joinChannel = async () => {
+		await callApi(`/chat/join/${channel.id}`, {
+			method: "POST",
+		});
+	};
+
 	const handleChannelClick = () => {
 		if (activeChannelId !== channel.id) {
 			setActiveChannelId(channel.id);
 			addChannel(channel);
+			joinChannel();
 		}
 	};
-
 	return (
 		<div className={cn("flex gap-2 items-center w-full h-16 min-h-16 p-4 cursor-pointer select-none hover:bg-input-bg", activeChannelId == channel.id ? "bg-borders" : "bg-bars-bg")} onClick={handleChannelClick}>
 			<div className="w-12 h-12 relative">
@@ -59,7 +65,7 @@ const ChannelItem = ({ channel, isForSearch }: ChannelProps) => {
 							<span className="text-body2 min-w-[4rem] ml-auto text-right">{convertTimestampToAppropriateFormat(channel.lastMessage.timestamp)}</span>
 						</>
 					)}
-					{channel.type == "group" && isForSearch == true &&  channel.members && <span className="text-body2">{channel.members} members</span>}
+					{channel.type == "group" && isForSearch == true && channel.members && <span className="text-body2">{channel.members} members</span>}
 				</div>
 			</div>
 		</div>

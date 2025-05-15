@@ -255,6 +255,7 @@ public class OAuth2Service {
             newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             newUser.setEnabled(true);
             newUser.setActive(true);
+            newUser.setStatus("offline");
 
             String defaultRole = "ROLE_USER";
             var userRole = redisStorageService.getRole(defaultRole);

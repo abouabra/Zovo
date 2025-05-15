@@ -6,6 +6,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.enums.VerificationTokenType;
 import me.abouabra.zovo.enums.VerificationTokenType.EmailTemplateData;
+import me.abouabra.zovo.services.storage.AvatarStorageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -32,7 +33,7 @@ public class EmailService {
     private final String emailDisplayName;
     private final String baseURL;
     private final TemplateEngine templateEngine;
-
+    private final AvatarStorageService avatarStorageService;
 
     /**
      * Constructs an EmailService with the required dependencies.
@@ -48,12 +49,13 @@ public class EmailService {
             @Value("${spring.mail.username}") String senderEmail,
             @Value("${spring.mail.display-name}") String emailDisplayName,
             @Value("${app.base-url}") String baseURL,
-            TemplateEngine templateEngine) {
+            TemplateEngine templateEngine, AvatarStorageService avatarStorageService) {
         this.javaMailSender = javaMailSender;
         this.senderEmail = senderEmail;
         this.emailDisplayName = emailDisplayName;
         this.baseURL = baseURL;
         this.templateEngine = templateEngine;
+        this.avatarStorageService = avatarStorageService;
     }
 
     /**
@@ -70,7 +72,8 @@ public class EmailService {
         try {
             for (VerificationTokenType tokenType : VerificationTokenType.values()) {
                 String dummyToken = "dummy-token";
-                EmailTemplateData templateData = tokenType.getEmailTemplateData(dummyToken, baseURL);
+                String logoURl = avatarStorageService.getAvatarUrl("logo.png");
+                EmailTemplateData templateData = tokenType.getEmailTemplateData(dummyToken, baseURL, logoURl);
                 String templateName = templateData.getTemplateName();
 
                 Context context = new Context();
@@ -116,7 +119,8 @@ public class EmailService {
             helper.setFrom(new InternetAddress(senderEmail, emailDisplayName, "UTF-8"));
             helper.setTo(recipientEmail);
 
-            EmailTemplateData templateData = verificationTokenType.getEmailTemplateData(UUIDToken, baseURL);
+            String logoURl = avatarStorageService.getAvatarUrl("logo.png");
+            EmailTemplateData templateData = verificationTokenType.getEmailTemplateData(UUIDToken, baseURL, logoURl);
             helper.setSubject(templateData.getSubject());
 
             Context context = new Context();

@@ -70,6 +70,7 @@ export default function LoginForm() {
 					username: user.username,
 					email: user.email,
 					avatar: user.avatar,
+					status: "online",
 				});
 				router.push("/home");
 			}

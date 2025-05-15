@@ -26,6 +26,7 @@ const OAuthSuccessCallback = () => {
             username: username as string,
             email: email as string,
             avatar: avatar as string,
+            status: "online",
             };
             setUserData(loggedInUser);
             router.push("/home");

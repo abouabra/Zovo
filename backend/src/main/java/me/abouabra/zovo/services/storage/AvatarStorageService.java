@@ -2,11 +2,13 @@ package me.abouabra.zovo.services.storage;
 
 import io.minio.*;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
 
+@Slf4j
 @Service
 public class AvatarStorageService {
     private final MinioClient minioClient;
@@ -53,6 +55,7 @@ public class AvatarStorageService {
             return null;
         }
     }
+
     public void uploadAvatar(String objectName, InputStream data, long size, String contentType) throws Exception {
         minioClient.putObject(
                 PutObjectArgs.builder()
@@ -63,6 +66,8 @@ public class AvatarStorageService {
                         .build()
         );
     }
+
+
 
     public void deleteAvatar(String objectName) throws Exception {
         minioClient.removeObject(

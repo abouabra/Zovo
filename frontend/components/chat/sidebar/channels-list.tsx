@@ -7,6 +7,7 @@ import { callApi } from "@/lib/callApi";
 
 const ChannelsList = () => {
 	const { channels, setChannels } = useChannelsSidebarStore();
+
 	useEffect(() => {
 		const getSidebarData = async () => {
 			const data = await callApi<ChannelType[]>("/chat/sidebar", {

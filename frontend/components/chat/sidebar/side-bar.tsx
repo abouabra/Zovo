@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import MenuIconMenu from "./menu-icon";
+import MenuIconMenu from "./popover-menu";
 import ChannelsList from "./channels-list";
 import ChannelItem from "./channel";
 import { ChannelType } from "@/constants/channel-type";

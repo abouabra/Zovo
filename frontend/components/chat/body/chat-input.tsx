@@ -23,7 +23,6 @@ const ChatInput = ({ channelId , sendMessage}: ChatInputProps) => {
 
 		sendMessage(message);
 		setMessage("");
-		setIsTyping(false);
 	};
 
 	return (

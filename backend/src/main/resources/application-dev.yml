@@ -132,6 +132,10 @@ spring:
             token-uri: https://github.com/login/oauth/access_token
             user-info-uri: https://api.github.com/user
 
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 3MB
 
 # Server Configuration
 server:
@@ -163,5 +167,3 @@ storage:
   secret-key: ${MINIO_ROOT_PASSWORD}
   avatars:
     bucket-name: avatars
-    max-file-size-in-megabytes: 10
-

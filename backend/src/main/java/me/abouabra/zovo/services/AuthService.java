@@ -75,6 +75,8 @@ public class AuthService {
     private final SecretEncryptionService encryptionService;
     private final AvatarStorageService avatarStorageService;
     private final AvatarGenerator avatarGenerator;
+    private final UserService userService;
+
     /**
      * Registers a new user and sends a verification email.
      * <p>
@@ -273,6 +275,7 @@ public class AuthService {
                     user.setPassword(passwordEncoder.encode(passwordResetDTO.getPassword()));
                     userRepo.save(user);
                     verificationTokenService.deleteTokenByUser(user);
+                    userService.updateUserSession(user);
                     return ApiResponse.success("Your password has been successfully reset");
                 })
                 .orElse(ApiResponse.failure(ApiCode.INVALID_VERIFICATION_TOKEN, "Invalid or expired verification token"));
@@ -312,6 +315,7 @@ public class AuthService {
             TOTPGenerator generator = getTOTPGenerator(base32Secret);
 
             URI URI = generator.getURI("Zovo", user.getEmail());
+            userService.updateUserSession(user);
 
             return ApiResponse.success("2FA QR code and recovery codes generated successfully",
                     Map.of("uri", URI.toString(),
@@ -321,6 +325,22 @@ public class AuthService {
         }
     }
 
+    public ResponseEntity<? extends ApiResponse<?>> verify2FA(User user, TwoFaCodeDTO twoFaCodeDTO) {
+        String encryptedSecret = user.getTwoFactorSecret();
+
+        if (encryptedSecret == null || encryptedSecret.isEmpty()) {
+            return ApiResponse.failure(ApiCode.TWO_FACTOR_AUTH_NOT_ENABLED, "2FA is not enabled for this account.");
+        }
+        String base32Secret = encryptionService.decrypt(encryptedSecret);
+        TOTPGenerator generator = getTOTPGenerator(base32Secret);
+
+        boolean isValid = generator.verify(twoFaCodeDTO.getCode());
+        if (isValid) {
+            return ApiResponse.success("2FA verification successful");
+        } else {
+            return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, "Invalid 2FA code");
+        }
+    }
 
     /**
      * Enables Two-Factor Authentication (2FA) for the currently logged-in user.
@@ -351,6 +371,7 @@ public class AuthService {
         if (isValid) {
             user.setTwoFactorEnabled(true);
             userRepo.save(user);
+            userService.updateUserSession(user);
 
             CompletableFuture.runAsync(() ->
                     emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_ENABLED, null)
@@ -383,6 +404,8 @@ public class AuthService {
         user.setTwoFactorRecoveryCodes(null);
 
         userRepo.save(user);
+        userService.updateUserSession(user);
+
 
         CompletableFuture.runAsync(() ->
                 emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_DISABLED, null)
@@ -466,9 +489,12 @@ public class AuthService {
         }
 
         User user = userMapper.toUser(requestDTO);
+        user.setStatus("offline");
         user.setRoles(Set.of(userRole));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepo.save(user);
+        user = userRepo.save(user);
+        userService.updateUserSession(user);
+        return user;
     }
 
 
@@ -484,6 +510,8 @@ public class AuthService {
         user.setEnabled(true);
         user.setActive(true);
         userRepo.save(user);
+        userService.updateUserSession(user);
+
         log.info("User '{}' has been activated", user.getEmail());
     }
 
@@ -522,6 +550,10 @@ public class AuthService {
         return newSession;
     }
 
+
+    public ResponseEntity<? extends ApiResponse<?>> getTwoFaStatus(User user) {
+        return ApiResponse.success(user.isTwoFactorEnabled() ? "Enabled" : "Disabled");
+    }
 
     /**
      * Verifies the provided 2FA code for the given user. It checks if the code is a valid recovery
@@ -652,6 +684,7 @@ public class AuthService {
 
         user.setTwoFactorRecoveryCodes(String.join(",", remainingCodes));
         userRepo.save(user);
+        userService.updateUserSession(user);
     }
 
     /**
@@ -666,4 +699,5 @@ public class AuthService {
 
         return ApiResponse.success(providers);
     }
+
 }

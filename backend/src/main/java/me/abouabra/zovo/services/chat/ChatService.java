@@ -3,8 +3,10 @@ package me.abouabra.zovo.services.chat;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.abouabra.zovo.dtos.MessageDTO;
+import me.abouabra.zovo.enums.ApiCode;
 import me.abouabra.zovo.mappers.MessageMapper;
 import me.abouabra.zovo.models.Channel;
+import me.abouabra.zovo.models.ChannelMember;
 import me.abouabra.zovo.models.Message;
 import me.abouabra.zovo.models.User;
 import me.abouabra.zovo.repositories.ChannelMemberRepository;
@@ -24,6 +26,7 @@ import javax.naming.directory.SearchResult;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -123,7 +126,7 @@ public class ChatService {
     @Transactional
     public ResponseEntity<? extends ApiResponse<?>> getSearchResult(String keyword, User user) {
         List<Channel> globalSearch = channelRepo.findTop10ByTypeAndNameContainingIgnoreCase("group", keyword);
-        List<Channel> personalSearch = channelRepo.findTop10ByTypeAndNameContainingIgnoreCaseAndMembers_Id("personal", keyword, user.getId());
+        List<Channel> personalSearch = channelRepo.findTop10ByTypeAndNameContainingIgnoreCase("personal", keyword);
         List<Channel> combined = Stream.concat(globalSearch.stream(), personalSearch.stream()).toList();
 
         List<SidebarChannel> searchList = getSidebarChannels(user, combined, null, null);
@@ -153,5 +156,17 @@ public class ChatService {
         );
 
         messagingTemplate.convertAndSend(destination, channelMessage);
+    }
+
+    @Transactional
+    public ResponseEntity<? extends ApiResponse<?>> joinChannel(User user, UUID channelUUID) {
+
+        Optional<Channel> channelOpt = channelRepo.findById(channelUUID);
+        if(channelOpt.isEmpty())
+            return ApiResponse.failure(ApiCode.BAD_REQUEST, "No channel Found");
+        Channel channel = channelOpt.get();
+        channel.getMembers().add(user);
+        channelRepo.save(channel);
+        return ApiResponse.success("Channel joined");
     }
 }

@@ -197,6 +197,13 @@ public class AuthController {
         );
     }
 
+
+    @GetMapping("/2fa/status")
+    public ResponseEntity<? extends ApiResponse<?>> getTwoFaStatus(@AuthenticationPrincipal UserPrincipal loggedInUser, HttpServletRequest request) {
+        return authService.getTwoFaStatus(loggedInUser.getUser());
+    }
+
+
     /**
      * Generates a Two-Factor Authentication (2FA) QR code for the authenticated user.
      *
@@ -229,6 +236,10 @@ public class AuthController {
         );
     }
 
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<? extends ApiResponse<?>> verify2FA(@AuthenticationPrincipal UserPrincipal loggedInUser, @Valid @RequestBody TwoFaCodeDTO twoFaCodeDTO) {
+        return authService.verify2FA(loggedInUser.getUser(), twoFaCodeDTO);
+    }
 
     /**
      * Disables Two-Factor Authentication (2FA) for the currently authenticated user.
@@ -269,5 +280,7 @@ public class AuthController {
                 }
         );
     }
+
+
 }
 

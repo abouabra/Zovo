@@ -25,6 +25,7 @@ export default function StoreInitializer() {
 				const data = await res.json();
 
 				if (data.code === "SUCCESS") {
+					console.log("User data fetched successfully:", data.details);
 					setUserData(data.details);
 				} else {
 					setUserData(null);

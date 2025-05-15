@@ -45,11 +45,14 @@ public enum VerificationTokenType {
      *
      * @param UUIDToken the unique token to append to the email URL.
      * @param baseURL   the base URL of the application used to construct links.
+     * @param logoURl the URL of the application logo used in the email template.
      * @return an instance of {@link EmailTemplateData} containing the template name, subject, and variables.
      * @throws IllegalArgumentException if the token type is unsupported.
      */
-    public EmailTemplateData getEmailTemplateData(String UUIDToken, String baseURL) {
-        Map<String, Object> variables = new HashMap<>();
+    public EmailTemplateData getEmailTemplateData(String UUIDToken, String baseURL, String logoURl) {
+        Map<String, Object> variables = new HashMap<>(
+                Map.of("logoURL", logoURl)
+        );
         String subject;
         String endpointURL;
 
