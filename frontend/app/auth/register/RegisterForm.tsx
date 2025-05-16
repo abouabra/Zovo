@@ -53,8 +53,6 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
 		try {
 			setIsLoading(true);
-
-			console.log("Form submitted:", data);
 			const res = await callApi("/auth/register", {
 				method: "POST",
 				body: JSON.stringify({
@@ -65,7 +63,6 @@ export default function EmailPasswordForm({ setIsEmailSent }: RegisterFormProps)
 				}),
 			});
 			if (res.code === "SUCCESS") {
-				console.log("Register successful: ", res);
 				setIsEmailSent(true);
 			}
 		} catch (err) {

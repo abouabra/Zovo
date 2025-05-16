@@ -47,7 +47,6 @@ public class ChatController {
 
     @PostMapping("/create")
     public ResponseEntity<? extends ApiResponse<?>> createChannel(@AuthenticationPrincipal UserPrincipal loggedInUser, @RequestBody Map<String, String> body) {
-        log.error("createChannel: {}", body);
         if (body == null || body.isEmpty() || !body.containsKey("name"))
             return ApiResponse.failure(ApiCode.BAD_REQUEST, "Missing channel name");
         return chatService.createChannel(loggedInUser.getUser(), body.get("name"));

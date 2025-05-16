@@ -50,7 +50,6 @@ const TwoFaOtpInput = () => {
 	const onSubmit = async (data: z.infer<typeof OTP_SCHEMA | typeof RECOVERY_SCHEMA>) => {
 		try {
 			setIsLoading(true);
-			console.log("Form submitted:", data);
 			const res = await callApi<UserResponse>("/auth/login-2fa", {
 				method: "POST",
 				body: JSON.stringify({
@@ -59,7 +58,6 @@ const TwoFaOtpInput = () => {
 				}),
 			});
 			if (res.code === "SUCCESS") {
-				console.log("2FA login successful:", res);
 				useTwoFAStore.getState().clear();
 				const user = res.details as UserResponse;
 				setUserData({

@@ -55,10 +55,9 @@ const EnabelTwoFaDialog = () => {
 		setIsLoading(true);
 		const fetchTwoFaStatus = async () => {
 			const res = await callApi("/auth/2fa/status");
-			if (res.code === "SUCCESS") {
-				console.log("2FA status: ", res);
-			} else {
-				console.error("Error fetching 2FA status: ", res);
+			if (res.code !== "SUCCESS") {
+				setIsLoading(false);
+				return;
 			}
 			setIsTwoFaEnabled(res.message === "Enabled");
 			setIsLoading(false);
@@ -73,11 +72,8 @@ const EnabelTwoFaDialog = () => {
 				method: "GET",
 			});
 			if (res.code === "SUCCESS" && res.details) {
-				console.log("2FA enabled: ", res);
 				setTwoFaUri(res.details.uri);
 				setRecoveryCodes(res.details.recoveryCodes);
-			} else {
-				console.error("Error enabling 2FA: ", res);
 			}
 		} else {
 			const res = await callApi("/auth/2fa/disable", {
@@ -87,9 +83,6 @@ const EnabelTwoFaDialog = () => {
 				setIsTwoFaEnabled(false);
 				setTwoFaUri("");
 				setRecoveryCodes([]);
-				console.log("2FA disabled: ", res);
-			} else {
-				console.error("Error disabling 2FA: ", res);
 			}
 		}
 	};
@@ -104,7 +97,6 @@ const EnabelTwoFaDialog = () => {
 		try {
 			setIsLoading(true);
 
-			console.log("Form submitted:", data);
 			const res = await callApi("/auth/2fa/enable", {
 				method: "POST",
 				body: JSON.stringify({
@@ -112,7 +104,6 @@ const EnabelTwoFaDialog = () => {
 				}),
 			});
 			if (res.code === "SUCCESS") {
-				console.log("2FA response: ", res);
 				setIsTwoFaEnabled(true);
 				setTwoFaUri("");
 				setRecoveryCodes([]);

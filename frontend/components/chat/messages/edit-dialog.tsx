@@ -8,13 +8,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import LoadingScreen from "@/components/loading-screen";
 import { useMessagesStore } from "@/stores/useChannelMessagesStore";
 
-const handleEditMessage = async (message: MessageType, content: string, updateMessage: (id: string, data: MessageType) => void, messages: MessageType[]) => {
-	console.log("Edit message: ", message);
-	console.log("New content: ", content);
+const handleEditMessage = async (message: MessageType, content: string, updateMessage: (id: string, data: MessageType) => void) => {
 	await new Promise((resolve) => setTimeout(resolve, 1000));
 	message.content = content;
 	updateMessage(message.id, { ...message });
-	console.log("Updated message: ", messages);
+
 };
 
 interface EditDialogProps {
@@ -23,7 +21,7 @@ interface EditDialogProps {
 }
 
 const EditDialog = ({ message, setIsMenuOpen }: EditDialogProps) => {
-	const { messages, updateMessage } = useMessagesStore();
+	const { updateMessage } = useMessagesStore();
 	const [content, setContent] = useState<string>(message.content);
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +61,7 @@ const EditDialog = ({ message, setIsMenuOpen }: EditDialogProps) => {
 							type="submit"
 							onClick={async () => {
 								setIsLoading(true);
-								await handleEditMessage(message, content, updateMessage, messages);
+								await handleEditMessage(message, content, updateMessage);
 								setIsLoading(false);
 								setIsOpen(false);
 								setIsMenuOpen(false);

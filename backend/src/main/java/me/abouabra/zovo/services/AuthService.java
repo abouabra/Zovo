@@ -201,7 +201,6 @@ public class AuthService {
         session.invalidate();
 
         SecurityContextHolder.clearContext();
-        log.info("User has been logged out");
         return ApiResponse.success("User logged out successfully");
     }
 
@@ -377,10 +376,8 @@ public class AuthService {
                     emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_ENABLED, null)
             );
 
-            log.info("2FA successfully enabled for user: {}", user.getEmail());
             return ApiResponse.success("2FA has been enabled successfully");
         } else {
-            log.warn("Failed 2FA activation attempt for user: {}", user.getEmail());
             return ApiResponse.failure(ApiCode.INVALID_TWO_FACTOR_CODE, "Invalid 2FA code");
         }
     }
@@ -411,7 +408,6 @@ public class AuthService {
                 emailService.sendMailAsync(user.getEmail(), VerificationTokenType.TWO_FACTOR_AUTH_DISABLED, null)
         );
 
-        log.info("2FA disabled for user: {}", user.getEmail());
         return ApiResponse.success("2FA has been disabled successfully");
     }
 

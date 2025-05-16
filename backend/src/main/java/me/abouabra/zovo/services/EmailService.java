@@ -130,7 +130,6 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             javaMailSender.send(message);
-            log.debug("Successfully sent {} email to {}", verificationTokenType, recipientEmail);
             return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("Error sending email to {}: {}", recipientEmail, e.getMessage());

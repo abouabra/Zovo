@@ -61,7 +61,6 @@ public class VerificationTokenService {
             tokenRepository.save(verificationToken);
         }
 
-        log.debug("Generated {} token for user {}, expires at {}", tokenType, user.getEmail(), expiryDate);
         return uuidToken;
     }
 

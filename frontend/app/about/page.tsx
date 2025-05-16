@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const AboutPage = () => {
 	const { user } = useUserStore();
-	console.log("User data:", user);
 	if (!user) return null;
 
 	return (

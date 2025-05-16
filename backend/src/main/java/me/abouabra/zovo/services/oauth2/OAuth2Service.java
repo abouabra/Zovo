@@ -171,7 +171,6 @@ public class OAuth2Service {
 
             return ApiResponse.redirect(String.format("%s/success", oAuthRedirectPrefix), userResponse);
         } catch (Exception e) {
-            log.error("OAuth login error", e);
             return ApiResponse.failure(ApiCode.BAD_REQUEST, "Authentication failed: " + e.getMessage());
         }
     }

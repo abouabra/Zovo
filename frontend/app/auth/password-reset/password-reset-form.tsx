@@ -45,8 +45,6 @@ const PasswordResetForm = ({ token, setIsPasswordChanged }: RegisterFormProps) =
 	const onSubmit = async (data: z.infer<typeof FormSchema>) => {
 		try {
 			setIsLoading(true);
-
-			console.log("Form submitted:", data);
 			const res = await callApi("/auth/password-reset", {
 				method: "POST",
 				body: JSON.stringify({
@@ -56,7 +54,6 @@ const PasswordResetForm = ({ token, setIsPasswordChanged }: RegisterFormProps) =
 				}),
 			});
 			if (res.code === "SUCCESS") {
-				console.log("Register successful: ", res);
 				setIsPasswordChanged(true);
 			}
 		} catch (err) {

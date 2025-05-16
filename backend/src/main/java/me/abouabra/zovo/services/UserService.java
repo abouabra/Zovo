@@ -78,16 +78,13 @@ public class UserService {
     @Transactional
     public ResponseEntity<? extends ApiResponse<?>> updateUserAvatar(MultipartFile file, User user) {
         try {
-            log.warn("Removing: {}", user.getAvatarKey());
             avatarStorageService.deleteAvatar(user.getAvatarKey());
             InputStream avatarStream = file.getInputStream();
             String completeKey = user.getId() + ContentTypeUtils.convertContentTypeToExtension(file.getContentType());
-            log.warn("Uploading: {}", completeKey);
             avatarStorageService.uploadAvatar(completeKey, avatarStream, avatarStream.available(), file.getContentType());
             user.setAvatarKey(completeKey);
             userRepo.save(user);
             updateUserSession(user);
-            log.warn("Avatar updated: {}", user.getAvatarKey());
             return ApiResponse.success("Avatar updated");
         } catch (Exception e) {
             return ApiResponse.failure(ApiCode.BAD_REQUEST, "Failed to read avatar file");
@@ -137,8 +134,7 @@ public class UserService {
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
 
         if (currentAuth == null) {
-            log.warn("No active authentication found for user: {}", user.getUsername());
-            return; // Exit early if no authentication exists
+            return;
         }
 
         Authentication newAuth = new UsernamePasswordAuthenticationToken(

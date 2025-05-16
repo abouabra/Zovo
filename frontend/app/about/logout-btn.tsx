@@ -19,8 +19,8 @@ const LogoutBtn = () => {
 				useTwoFAStore.getState().clear();
 				router.push("/auth/login");
 			}
-		} catch (err) {
-			console.error("Login error:", err);
+		} catch (error) {
+			console.error("Logout failed:", error);
 		}
 	};
 	return (

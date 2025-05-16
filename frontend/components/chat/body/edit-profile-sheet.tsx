@@ -130,7 +130,6 @@ const EditProfile = () => {
 			toast(data.code, {
 				description: data.message,
 			});
-			console.error("Error uploading avatar: ", res);
 		}
 		setIsLoading(false);
 	};
@@ -139,7 +138,6 @@ const EditProfile = () => {
 		try {
 			setIsLoading(true);
 
-			console.log("Form submitted:", data);
 			const res = await callApi("/users/update", {
 				method: "PUT",
 				body: JSON.stringify({
@@ -157,7 +155,6 @@ const EditProfile = () => {
 						email: data.email,
 					});
 				}
-				console.log("Register successful: ", res);
 			}
 		} catch (err) {
 			console.error("Login error:", err);

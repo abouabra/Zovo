@@ -21,7 +21,6 @@ const CreateGroupDialog = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [content, setContent] = useState<string>("");
 	const { addChannel } = useChannelsSidebarStore();
-	// const {} = useChatSocket();
 	const handleCreateGroup = async () => {
 		try {
 			setIsLoading(true);
@@ -47,7 +46,6 @@ const CreateGroupDialog = () => {
 				toast.success("Group created successfully", {
 					description: "You can now start chatting with your group.",
 				});
-				console.log("Group created successfully");
 			}
 		} catch (error) {
 			toast.error("Error creating group", {

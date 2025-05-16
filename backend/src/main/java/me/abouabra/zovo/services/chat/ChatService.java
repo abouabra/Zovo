@@ -134,7 +134,6 @@ public class ChatService {
     @Transactional
     public void sendMessage(MessageDTO messageDTO) {
         String destination = "/topic/channel." + messageDTO.getChannelId();
-        log.info("Received message: {}", messageDTO);
         Message recievedMessage = messageMapper.toEntity(messageDTO);
         recievedMessage.setTimestamp(ZonedDateTime.now());
         recievedMessage = messageRepo.save(recievedMessage);
@@ -181,7 +180,6 @@ public class ChatService {
         );
 
         channel = channelRepo.save(channel);
-        log.warn("Channel ID: {}", channel.getId());
         return ApiResponse.success("Channel created", Map.of(
                 "id", channel.getId(),
                 "avatar", avatarStorageService.getAvatarUrl(channel.getAvatarKey())

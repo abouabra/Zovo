@@ -19,13 +19,11 @@ export function useChatSocket(channelId: string, addMessage: (msg: MessageType) 
 		const client = new Client({
 			webSocketFactory: () => socket as WebSocket,
 			reconnectDelay: 5000,
-            debug: console.debug,
 			onConnect: () => {
 				clientRef.current = client;
 				client.subscribe(`/topic/channel.${channelId}`, (stompMsg: StompMessage) => {
 					try {
                         const message = JSON.parse(stompMsg.body) as MessageType;
-                        console.log("[STOMP] message", message);
 						if (message.channelId === channelId) {
 							addMessage(message);
 						}

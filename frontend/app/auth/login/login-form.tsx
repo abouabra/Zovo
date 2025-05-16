@@ -58,7 +58,6 @@ export default function LoginForm() {
 					password: data.password,
 				}),
 			});
-			console.log("Login response:", res);
 			if (res.code == "LOGIN_NEEDS_2FA") {
 				const twoFA = res.details as TwoFaResponse;
 				useTwoFAStore.getState().setTwoFAData({ token: twoFA.token });

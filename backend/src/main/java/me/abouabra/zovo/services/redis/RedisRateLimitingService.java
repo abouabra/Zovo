@@ -123,7 +123,6 @@ public class RedisRateLimitingService {
         try {
             return function.get();
         } catch (Exception e) {
-            log.debug("Rate-limiting failed for action {} and identifier {}", action, identifier);
             recordFailedAttempt(identifier, action.toString());
             throw e;
         }

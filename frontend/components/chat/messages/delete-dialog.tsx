@@ -9,7 +9,6 @@ import LoadingScreen from "@/components/loading-screen";
 import { useMessagesStore } from "@/stores/useChannelMessagesStore";
 
 const handleDeleteMessage = async (message: MessageType, removeMessage: (id: string) => void) => {
-	console.log("Delete message: ", message);
 	await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate an API call
 	removeMessage(message.id);
 };
