@@ -33,7 +33,7 @@ spring:
   # Database Configuration
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/zovo_db
+    url: jdbc:postgresql://postgres-container:5432/zovo_db
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     hikari:
@@ -89,7 +89,7 @@ spring:
   # Redis Configuration
   data:
     redis:
-      host: localhost
+      host: redis-container
       port: 6379
       password: ${REDIS_PASSWORD}
       timeout: 60000
@@ -162,7 +162,7 @@ logging:
 
 
 storage:
-  endpoint: http://localhost:9000
+  endpoint: http://minio-container:9000
   access-key: ${MINIO_ROOT_USER}
   secret-key: ${MINIO_ROOT_PASSWORD}
   avatars:

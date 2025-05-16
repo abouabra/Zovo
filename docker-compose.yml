@@ -1,26 +1,56 @@
 services:
+  frontend:
+    container_name: frontend-container
+    build:
+      context: .
+      dockerfile: infrastructure/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - backend_network
+    restart: always
+    depends_on:
+      - backend
+
+  backend:
+    container_name: backend-container
+    build:
+      context: .
+      dockerfile: infrastructure/backend/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    networks:
+      - backend_network
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
   nginx:
-      container_name: nginx_container
-      image: nginx:1.27.5-alpine
-      ports:
-        - "443:443"
-        - "80:80"
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-      volumes:
-        - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-        - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
-      networks:
-        - backend_network
-      restart: always
+    container_name: nginx-container
+    image: nginx:1.27.5-alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - backend_network
+    restart: always
 
   postgres:
     image: postgres:17.4
-    container_name: postgres_container
+    container_name: postgres-container
     env_file:
       - .env
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -30,9 +60,9 @@ services:
 
   redis:
     image: redis:7.4.3
-    container_name: redis_container
-    ports:
-      - "6379:6379"
+    container_name: redis-container
+    # ports:
+    #   - "6379:6379"
     networks:
       - backend_network
     volumes:
@@ -45,9 +75,9 @@ services:
   
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
-    container_name: minio_container
+    container_name: minio-container
     ports:
-      - "9000:9000"
+      # - "9000:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
     volumes:

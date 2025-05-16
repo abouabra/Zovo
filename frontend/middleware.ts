@@ -31,7 +31,7 @@ export async function middleware(req: NextRequest) {
 	}
 
 	try {
-		const res = await fetch("http://localhost:8080/api/v1/auth/is-authenticated", {
+		const res = await fetch("http://backend-container:8080/api/v1/auth/is-authenticated", {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
