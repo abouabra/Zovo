@@ -1,3 +1,5 @@
+![Logo](frontend/public/images/logo.png)
+
 # Zovo Full-Stack Chatting Application
 
 ## Overview
