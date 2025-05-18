@@ -64,7 +64,7 @@ spring:
   flyway:
     locations: classpath:db/migrations
     enabled: true
-#    baseline-on-migrate: true # used for migrating existing databases
+    baseline-on-migrate: true # used for migrating existing databases
 
   # Output Configuration
   output:
